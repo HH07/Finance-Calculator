@@ -5,21 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EAS Finance | Property Investment Calculator</title>
 <style>
-  /* --- CORE STYLES --- */
+  /* --- EAS BRANDING & CORE STYLES --- */
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
   .wrap { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-  h1 { margin-top: 0; color: #0d2e48; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+  h1 { margin-top: 0; color: #0d2e48; border-bottom: 2px solid #eee; padding-bottom: 15px; text-align: center; }
   
   /* Buttons */
-  .btnbar { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btnbar { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
   button { padding: 10px 20px; border: 1px solid #ccc; background: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
   button:hover { background: #f0f0f0; }
   button.primary { background: #0d2e48; color: white; border-color: #0d2e48; }
   button.primary:hover { background: #1a4a70; }
 
   /* Tabs */
-  .tabs { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; gap: 5px; }
-  .tabbtn { padding: 12px 20px; background: #f9f9f9; border: 1px solid #e0e0e0; border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; color: #666; font-weight: 500; }
+  .tabs { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; gap: 5px; overflow-x: auto; }
+  .tabbtn { padding: 12px 20px; background: #f9f9f9; border: 1px solid #e0e0e0; border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; color: #666; font-weight: 500; white-space: nowrap; }
   .tabbtn.active { background: #fff; color: #0d2e48; font-weight: bold; border-top: 3px solid #0d2e48; border-bottom: 2px solid #fff; margin-bottom: -2px; }
   .tabpage { display: none; }
   .tabpage.active { display: block; animation: fadeIn 0.3s; }
@@ -34,23 +34,22 @@
   input, select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
   input:focus { border-color: #0d2e48; outline: none; }
 
-  /* Output Cells */
+  /* Outputs */
   .cellOutput { font-family: 'Consolas', monospace; font-weight: 700; text-align: right; color: #0d2e48; }
   .right { text-align: right; }
   .center { text-align: center; }
 
-  /* Grid for Dashboard */
   .kpiGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
   @media(max-width:768px) { .kpiGrid { grid-template-columns: 1fr; } }
-  .card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fff; }
   .card h3 { background: #fff; padding: 15px; margin: 0; border-bottom: 1px solid #e0e0e0; font-size: 16px; color: #0d2e48; }
-  .card .body { padding: 15px; background: #fff; }
+  .card .body { padding: 15px; }
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <h1>Property Investment Calculator</h1>
+  <h1>EAS Finance | Deal Analyser</h1>
   
   <div class="btnbar">
     <button class="primary" onclick="resetToZero()">🔄 Reset to Zero</button>
@@ -109,11 +108,11 @@
     <table>
       <tr class="refurb-row"><td>Materials (£)</td><td><input type="number" id="inRefMat" value="15000"></td></tr>
       <tr class="refurb-row"><td>Labour (£)</td><td><input type="number" id="inRefLab" value="20000"></td></tr>
-      <tr class="refurb-row"><td>Pro Fees (£)</td><td><input type="number" id="inRefPro" value="2000"></td></tr>
+      <tr class="refurb-row"><td>Professional Fees (£)</td><td><input type="number" id="inRefPro" value="2000"></td></tr>
       <tr class="refurb-row"><td>Other Refurb (£)</td><td><input type="number" id="inRefOther" value="1000"></td></tr>
       <tr class="dev-row" style="display:none"><td>Site/Ground (£)</td><td><input type="number" id="inDevSite" value="0"></td></tr>
       <tr class="dev-row" style="display:none"><td>Construction (£)</td><td><input type="number" id="inDevBuild" value="0"></td></tr>
-      <tr class="dev-row" style="display:none"><td>Pro Fees (£)</td><td><input type="number" id="inDevPro" value="0"></td></tr>
+      <tr class="dev-row" style="display:none"><td>Professional Fees (£)</td><td><input type="number" id="inDevPro" value="0"></td></tr>
       <tr class="dev-row" style="display:none"><td>Other Dev (£)</td><td><input type="number" id="inDevOther" value="0"></td></tr>
       <tr><td>Contingency (%)</td><td><input type="number" id="inCont" value="10"></td></tr>
     </table>
@@ -125,7 +124,7 @@
       <tr><td>Term (Years)</td><td><input type="number" id="inTerm" value="25"></td></tr>
       <tr><td>Type</td><td><select id="inType"><option value="Amortising">Amortising</option><option value="Interest-only">Interest-only</option></select></td></tr>
       <tr><td>Lender Fees (£)</td><td><input type="number" id="inLfee" value="2000"></td></tr>
-      <tr><td>Works Period (Mos)</td><td><input type="number" id="inWorks" value="6"></td></tr>
+      <tr><td>Works Period (Months)</td><td><input type="number" id="inWorks" value="6"></td></tr>
     </table>
 
     <div class="section-header">4. Income & Exit</div>
@@ -211,190 +210,178 @@ const val = (id) => parseFloat(el(id).value) || 0;
 const fmtGBP = (n) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
 const fmtPct = (n) => (n*100).toFixed(2) + "%";
 
+function resetToZero() {
+    if (confirm('Clear all data and reset all fields to 0?')) {
+        document.querySelectorAll('input[type="number"]').forEach(input => { input.value = 0; });
+        document.querySelectorAll('select').forEach(select => { select.selectedIndex = 0; });
+        syncScenario();
+        updateUI();
+    }
+}
+
 function pmt(rate, nper, pv) {
-  if(rate===0) return -(pv/nper);
-  const pvif = Math.pow(1+rate, nper);
-  return -(rate*pv*pvif)/(pvif-1);
+    if (rate === 0) return -(pv / nper);
+    const pvif = Math.pow(1 + rate, nper);
+    return -(rate * pv * pvif) / (pvif - 1);
 }
 
 function irr(values) {
-  let r=0.1; for(let i=0;i<100;i++){ let n=0,d=0;
-    for(let j=0;j<values.length;j++){ n+=values[j]/Math.pow(1+r,j); d-=j*values[j]/Math.pow(1+r,j+1); }
-    let nr=r-n/d; if(Math.abs(nr-r)<1e-6) return nr; r=nr;
-  } return NaN;
+    let r = 0.1;
+    for (let i = 0; i < 100; i++) {
+        let n = 0, d = 0;
+        for (let j = 0; j < values.length; j++) {
+            n += values[j] / Math.pow(1 + r, j);
+            d -= j * values[j] / Math.pow(1 + r, j + 1);
+        }
+        let nr = r - n / d;
+        if (Math.abs(nr - r) < 1e-6) return nr;
+        r = nr;
+    }
+    return NaN;
 }
 
 function npv(rate, values) {
-  return values.reduce((acc, curr, i) => acc + curr / Math.pow(1 + rate, i), 0);
-}
-
-// LOGIC FOR RESET TO ZERO
-function resetToZero() {
-  if(confirm('Clear all data and reset all fields to 0?')) {
-    document.querySelectorAll('input[type="number"]').forEach(input => input.value = 0);
-    document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
-    syncScenario();
-    updateUI();
-  }
+    return values.reduce((acc, curr, i) => acc + curr / Math.pow(1 + rate, i), 0);
 }
 
 function calculate(inputOverrides = null) {
-  let v;
-  if(inputOverrides) {
-    v = inputOverrides;
-  } else {
-    v = {
-      strat: el("inScenario").value, units: val("inUnits"),
-      purch: val("inPurchase"), acq: val("inStamp")+val("inLegal")+val("inAgent")+val("inOtherAcq"),
-      ref: val("inRefMat")+val("inRefLab")+val("inRefPro")+val("inRefOther"),
-      dev: val("inDevSite")+val("inDevBuild")+val("inDevPro")+val("inDevOther"),
-      cont: val("inCont")/100,
-      loan: val("inLoan"), rate: val("inRate")/100, term: val("inTerm"), type: el("inType").value, lfee: val("inLfee"), works: val("inWorks"),
-      rent: val("inRent"), growth: val("inGrowth")/100, opex: val("inOpexPct")/100, hold: val("inHold"),
-      exit: val("inExitVal"), sell: val("inSell")/100, discount: 0.08 
-    };
-  }
+    let v;
+    if (inputOverrides) {
+        v = inputOverrides;
+    } else {
+        v = {
+            strat: el("inScenario").value, units: val("inUnits"),
+            purch: val("inPurchase"), acq: val("inStamp") + val("inLegal") + val("inAgent") + val("inOtherAcq"),
+            ref: val("inRefMat") + val("inRefLab") + val("inRefPro") + val("inRefOther"),
+            dev: val("inDevSite") + val("inDevBuild") + val("inDevPro") + val("inDevOther"),
+            cont: val("inCont") / 100, loan: val("inLoan"), rate: val("inRate") / 100, term: val("inTerm"),
+            type: el("inType").value, lfee: val("inLfee"), works: val("inWorks"),
+            rent: val("inRent"), growth: val("inGrowth") / 100, opex: val("inOpexPct") / 100,
+            hold: val("inHold"), exit: val("inExitVal"), sell: val("inSell") / 100, discount: 0.08
+        };
+    }
 
-  const baseBuild = (v.strat === 'Refurb-to-Rent') ? v.ref : v.dev;
-  const totalBuild = baseBuild * (1 + v.cont);
-  const intWorks = v.loan * v.rate * (v.works/12) * 0.5; 
-  const gdc = v.purch + v.acq + totalBuild + v.lfee + intWorks;
-  const equity = Math.max(0, gdc - v.loan);
+    const baseBuild = (v.strat === 'Refurb-to-Rent') ? v.ref : v.dev;
+    const totalBuild = baseBuild * (1 + v.cont);
+    const intWorks = v.loan * v.rate * (v.works / 12) * 0.5;
+    const gdc = v.purch + v.acq + totalBuild + v.lfee + intWorks;
+    const equity = Math.max(0, gdc - v.loan);
+    const grossRent = v.rent * v.units * 12;
+    const expense = grossRent * v.opex;
+    const noi = grossRent - expense;
 
-  const grossRent = v.rent * v.units * 12;
-  const expense = grossRent * v.opex;
-  const noi = grossRent - expense;
+    let debtSvc = 0;
+    if (v.loan > 0) {
+        if (v.type === 'Interest-only') debtSvc = v.loan * v.rate;
+        else debtSvc = Math.abs(pmt(v.rate / 12, v.term * 12, v.loan)) * 12;
+    }
+    const cf1 = noi - debtSvc;
 
-  let debtSvc = 0;
-  if(v.loan > 0) {
-    if(v.type === 'Interest-only') debtSvc = v.loan * v.rate;
-    else debtSvc = Math.abs(pmt(v.rate/12, v.term*12, v.loan)) * 12;
-  }
-  const cf1 = noi - debtSvc;
+    let balance = v.loan;
+    if (v.type === 'Amortising' && v.loan > 0) {
+        const r = v.rate / 12; const n = v.term * 12; const p = v.hold * 12;
+        if (p < n) balance = v.loan * (Math.pow(1 + r, n) - Math.pow(1 + r, p)) / (Math.pow(1 + r, n) - 1);
+        else balance = 0;
+    }
+    const exitVal = v.exit * Math.pow(1.02, v.hold);
+    const salesFees = exitVal * v.sell;
+    const netExit = exitVal - salesFees - balance;
+    const profit = (exitVal - salesFees) - gdc;
 
-  let balance = v.loan;
-  if(v.type === 'Amortising' && v.loan > 0) {
-    const r = v.rate/12; const n = v.term*12; const p = v.hold*12;
-    if(p < n) balance = v.loan * (Math.pow(1+r,n) - Math.pow(1+r,p))/(Math.pow(1+r,n)-1);
-    else balance = 0;
-  }
-  const exitVal = v.exit * Math.pow(1.02, v.hold); 
-  const salesFees = exitVal * v.sell;
-  const netExit = exitVal - salesFees - balance;
-  const profit = (exitVal - salesFees) - gdc;
+    const flows = [-equity];
+    const tableRows = [];
+    for (let y = 1; y <= v.hold; y++) {
+        const factor = Math.pow(1 + v.growth, y - 1);
+        const r_gross = grossRent * factor;
+        const r_exp = r_gross * v.opex;
+        const r_noi = r_gross - r_exp;
+        const r_net = r_noi - debtSvc;
+        if (y === v.hold) flows.push(r_net + netExit); else flows.push(r_net);
+        tableRows.push({ y, rev: r_gross, exp: r_exp, n: r_noi, d: debtSvc, net: r_net });
+    }
 
-  const flows = [-equity];
-  const tableRows = [];
-  for(let y=1; y<=v.hold; y++) {
-    const factor = Math.pow(1+v.growth, y-1);
-    const r_gross = grossRent * factor;
-    const r_exp = r_gross * v.opex;
-    const r_noi = r_gross - r_exp;
-    const r_net = r_noi - debtSvc;
-    
-    if(y===v.hold) flows.push(r_net + netExit);
-    else flows.push(r_net); 
-
-    tableRows.push({ y, rev:r_gross, exp:r_exp, n:r_noi, d:debtSvc, net:r_net });
-  }
-
-  return { v, build: totalBuild, cont: baseBuild*v.cont, acq: v.purch+v.acq, intWorks, gdc, reqEq: equity, grossRent, noi, debtSvc, cf1, exitVal, salesCosts: salesFees, balance, netEquityExit: netExit, profit, cashflows: flows, tableRows };
+    return { v, build: totalBuild, cont: baseBuild * v.cont, acq: v.purch + v.acq, intWorks, gdc, reqEq: equity, grossRent, noi, debtSvc, cf1, exitVal, salesCosts: salesFees, balance, netEquityExit: netExit, profit, cashflows: flows, tableRows };
 }
 
 function updateUI() {
-  const res = calculate();
-  const v = res.v;
-  
-  const set = (id, val) => { const e = el(id); if(e) e.textContent = val; };
+    const res = calculate();
+    const v = res.v;
+    const set = (id, val) => { const e = el(id); if (e) e.textContent = val; };
 
-  set("kpiScenario", v.strat); set("kpiUnits", v.units); set("kpiHold", v.hold);
-  set("kpiGdc", fmtGBP(res.gdc)); set("kpiEq", fmtGBP(res.reqEq));
-  set("kpiProfit", fmtGBP(res.profit));
-  set("kpiCf1", fmtGBP(res.cf1));
-  set("kpiGY", fmtPct(res.gdc > 0 ? res.grossRent/res.gdc : 0)); 
-  set("kpiNY", fmtPct(res.gdc > 0 ? res.noi/res.gdc : 0));
-  
-  const irrVal = irr(res.cashflows); 
-  set("kpiIrr", isNaN(irrVal) ? "-" : fmtPct(irrVal));
+    set("kpiScenario", v.strat); set("kpiUnits", v.units); set("kpiHold", v.hold);
+    set("kpiGdc", fmtGBP(res.gdc)); set("kpiEq", fmtGBP(res.reqEq)); set("kpiProfit", fmtGBP(res.profit));
+    set("kpiCf1", fmtGBP(res.cf1)); set("kpiGY", fmtPct(res.gdc > 0 ? res.grossRent / res.gdc : 0));
+    set("kpiNY", fmtPct(res.gdc > 0 ? res.noi / res.gdc : 0));
+    
+    const irrVal = irr(res.cashflows); set("kpiIrr", isNaN(irrVal) ? "-" : fmtPct(irrVal));
 
-  set("oAcq", fmtGBP(v.purch + v.acq));
-  set("oBuild", fmtGBP(res.build));
-  set("oFin", fmtGBP(v.lfee + res.intWorks));
-  set("oGdc", fmtGBP(res.gdc)); set("oLoan", fmtGBP(v.loan)); set("oEq", fmtGBP(res.reqEq));
+    set("oAcq", fmtGBP(v.purch + v.acq)); set("oBuild", fmtGBP(res.build)); set("oFin", fmtGBP(v.lfee + res.intWorks));
+    set("oGdc", fmtGBP(res.gdc)); set("oLoan", fmtGBP(v.loan)); set("oEq", fmtGBP(res.reqEq));
+    set("oSale", fmtGBP(res.exitVal)); set("oScost", fmtGBP(res.salesCosts)); set("oBal", fmtGBP(res.balance));
+    set("oNet", fmtGBP(res.netEquityExit)); set("oProf", fmtGBP(res.profit));
 
-  set("oSale", fmtGBP(res.exitVal));
-  set("oScost", fmtGBP(res.salesCosts)); set("oBal", fmtGBP(res.balance));
-  set("oNet", fmtGBP(res.netEquityExit)); set("oProf", fmtGBP(res.profit));
-
-  renderCashflowTable(res.tableRows);
-  renderSens(v); 
-  renderAmort(v.loan, v.rate, v.term, v.type, v.hold);
+    renderCashflowTable(res.tableRows);
+    renderSens(v);
+    renderAmort(v.loan, v.rate, v.term, v.type, v.hold);
 }
 
 function renderCashflowTable(rows) {
-  const tbody = el("tblCash").querySelector("tbody");
-  tbody.innerHTML = "";
-  rows.forEach(row => {
-    tbody.innerHTML += `<tr><td>${row.y}</td><td>${fmtGBP(row.rev)}</td><td>${fmtGBP(row.exp)}</td><td>${fmtGBP(row.n)}</td><td>${fmtGBP(row.d)}</td><td><b>${fmtGBP(row.net)}</b></td></tr>`;
-  });
+    const tbody = el("tblCash").querySelector("tbody");
+    tbody.innerHTML = "";
+    rows.forEach(row => {
+        tbody.innerHTML += `<tr><td>${row.y}</td><td>${fmtGBP(row.rev)}</td><td>${fmtGBP(row.exp)}</td><td>${fmtGBP(row.n)}</td><td>${fmtGBP(row.d)}</td><td><b>${fmtGBP(row.net)}</b></td></tr>`;
+    });
 }
 
 function renderSens(baseV) {
-  const tb = el("tblSens");
-  let html = "<thead><tr><th style='background:#f0f0f0'>Build Cost \\ Rent</th><th class='center'>-10%</th><th class='center'>Base</th><th class='center'>+10%</th></tr></thead><tbody>";
-
-  const costVars = [0.9, 1.0, 1.1]; 
-  const rentVars = [0.9, 1.0, 1.1]; 
-  const labels = ["-10% Cost", "Base Cost", "+10% Cost"];
-
-  costVars.forEach((cMult, i) => {
-    html += `<tr><td style='font-weight:bold;background:#f9f9f9'>${labels[i]}</td>`;
-    rentVars.forEach((rMult, j) => {
-       let input = Object.assign({}, baseV);
-       input.rent = baseV.rent * rMult;
-       input.ref = baseV.ref * cMult; 
-       input.dev = baseV.dev * cMult;
-       const res = calculate(input);
-       const val = npv(input.discount, res.cashflows);
-       const isBase = (i===1 && j===1);
-       const cellStyle = isBase ? "background:#e8f5e9;font-weight:bold;border:2px solid #a5d6a7" : "";
-       html += `<td class="right" style="${cellStyle}">${fmtGBP(val)}</td>`;
+    const tb = el("tblSens");
+    let html = "<thead><tr><th style='background:#f0f0f0'>Build Cost \\ Rent</th><th class='center'>-10%</th><th class='center'>Base</th><th class='center'>+10%</th></tr></thead><tbody>";
+    const costVars = [0.9, 1.0, 1.1]; const rentVars = [0.9, 1.0, 1.1]; const labels = ["-10% Cost", "Base Cost", "+10% Cost"];
+    costVars.forEach((cMult, i) => {
+        html += `<tr><td style='font-weight:bold;background:#f9f9f9'>${labels[i]}</td>`;
+        rentVars.forEach((rMult, j) => {
+            let input = Object.assign({}, baseV);
+            input.rent = baseV.rent * rMult; input.ref = baseV.ref * cMult; input.dev = baseV.dev * cMult;
+            const res = calculate(input);
+            const val = npv(input.discount, res.cashflows);
+            const isBase = (i === 1 && j === 1);
+            const cellStyle = isBase ? "background:#e8f5e9;font-weight:bold;border:2px solid #a5d6a7" : "";
+            html += `<td class="right" style="${cellStyle}">${fmtGBP(val)}</td>`;
+        });
+        html += "</tr>";
     });
-    html += "</tr>";
-  });
-  tb.innerHTML = html + "</tbody>";
+    tb.innerHTML = html + "</tbody>";
 }
 
 function renderAmort(loan, rate, term, type, hold) {
-  const tb = el("tblAmort").querySelector("tbody"); tb.innerHTML = "";
-  if(loan <= 0) return;
-  let bal = loan; const mRate = rate/12; 
-  const pmtVal = (type==='Interest-only') ? loan*mRate : Math.abs(pmt(mRate, term*12, loan));
-  
-  for(let y=1; y<=hold; y++) {
-    let iSum=0, pSum=0, start=bal;
-    for(let m=0; m<12; m++) {
-      if(bal<=0.1) break;
-      const interest = bal*mRate;
-      const princ = (type==='Interest-only') ? 0 : (pmtVal - interest);
-      iSum+=interest; pSum+=princ; bal-=princ;
+    const tb = el("tblAmort").querySelector("tbody"); tb.innerHTML = "";
+    if (loan <= 0) return;
+    let bal = loan; const mRate = rate / 12;
+    const pmtVal = (type === 'Interest-only') ? loan * mRate : Math.abs(pmt(mRate, term * 12, loan));
+    for (let y = 1; y <= hold; y++) {
+        let iSum = 0, pSum = 0, start = bal;
+        for (let m = 0; m < 12; m++) {
+            if (bal <= 0.1) break;
+            const interest = bal * mRate;
+            const princ = (type === 'Interest-only') ? 0 : (pmtVal - interest);
+            iSum += interest; pSum += princ; bal -= princ;
+        }
+        tb.innerHTML += `<tr><td>${y}</td><td>${fmtGBP(start)}</td><td>${fmtGBP(iSum)}</td><td>${fmtGBP(pSum)}</td><td>${fmtGBP(bal)}</td></tr>`;
     }
-    tb.innerHTML += `<tr><td>${y}</td><td>${fmtGBP(start)}</td><td>${fmtGBP(iSum)}</td><td>${fmtGBP(pSum)}</td><td>${fmtGBP(bal)}</td></tr>`;
-  }
 }
 
 function switchTab(id, btn) {
-  document.querySelectorAll('.tabpage').forEach(e=>e.classList.remove('active'));
-  el('tab-'+id).classList.add('active');
-  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+    document.querySelectorAll('.tabpage').forEach(e => e.classList.remove('active'));
+    el('tab-' + id).classList.add('active');
+    document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
 }
 
 function syncScenario() {
-  const s = el("inScenario").value;
-  document.querySelectorAll('.refurb-row').forEach(r=>r.style.display = (s==='Refurb-to-Rent'?'table-row':'none'));
-  document.querySelectorAll('.dev-row').forEach(r=>r.style.display = (s==='Refurb-to-Rent'?'none':'table-row'));
-  updateUI();
+    const s = el("inScenario").value;
+    document.querySelectorAll('.refurb-row').forEach(r => r.style.display = (s === 'Refurb-to-Rent' ? 'table-row' : 'none'));
+    document.querySelectorAll('.dev-row').forEach(r => r.style.display = (s === 'Refurb-to-Rent' ? 'none' : 'table-row'));
+    updateUI();
 }
 
 document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', updateUI));
