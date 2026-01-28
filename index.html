@@ -57,7 +57,7 @@
     /* Hide specific non-printable elements */
     .section-header { border: 1px solid #ccc; }
     input, select { border: none; background: transparent; padding: 0; -webkit-appearance: none; font-weight: bold; }
-    .card { break-inside: avoid; border: 1px solid #999; }
+    .card { break-inside: avoid; border: 1px solid #999; page-break-inside: avoid; }
   }
 </style>
 </head>
@@ -245,26 +245,22 @@ function npv(rate, values) {
   return values.reduce((acc, curr, i) => acc + curr / Math.pow(1 + rate, i), 0);
 }
 
-// --- CALCULATION ---
-function calculate(inputOverrides = null) {
-  // If overrides are provided (for sensitivity), use them. Otherwise read DOM.
-  let v;
-  if(inputOverrides) {
-    v = inputOverrides;
-  } else {
-    // Read DOM Inputs
-    v = {
-      strat: el("inScenario").value, units: val("inUnits"),
-      purch: val("inPurchase"), acq: val("inStamp")+val("inLegal")+val("inAgent")+val("inOtherAcq"),
-      ref: val("inRefMat")+val("inRefLab")+val("inRefPro")+val("inRefOther"),
-      dev: val("inDevSite")+val("inDevBuild")+val("inDevPro")+val("inDevOther"),
-      cont: val("inCont")/100,
-      loan: val("inLoan"), rate: val("inRate")/100, term: val("inTerm"), type: el("inType").value, lfee: val("inLfee"), works: val("inWorks"),
-      rent: val("inRent"), growth: val("inGrowth")/100, opex: val("inOpexPct")/100, hold: val("inHold"),
-      exit: val("inExitVal"), sell: val("inSell")/100, discount: 0.08 // Default discount rate for NPV
-    };
-  }
+// --- DATA GATHERING ---
+function getDOMInputs() {
+  return {
+    strat: el("inScenario").value, units: val("inUnits"),
+    purch: val("inPurchase"), acq: val("inStamp")+val("inLegal")+val("inAgent")+val("inOtherAcq"),
+    ref: val("inRefMat")+val("inRefLab")+val("inRefPro")+val("inRefOther"),
+    dev: val("inDevSite")+val("inDevBuild")+val("inDevPro")+val("inDevOther"),
+    cont: val("inCont")/100,
+    loan: val("inLoan"), rate: val("inRate")/100, term: val("inTerm"), type: el("inType").value, lfee: val("inLfee"), works: val("inWorks"),
+    rent: val("inRent"), growth: val("inGrowth")/100, opex: val("inOpexPct")/100, hold: val("inHold"),
+    exit: val("inExitVal"), sell: val("inSell")/100, discount: 0.08
+  };
+}
 
+// --- CORE CALCULATOR (Accepts inputs object so we can run simulations) ---
+function calculate(v) {
   // 1. Costs
   const baseBuild = (v.strat === 'Refurb-to-Rent') ? v.ref : v.dev;
   const totalBuild = baseBuild * (1 + v.cont);
@@ -307,24 +303,21 @@ function calculate(inputOverrides = null) {
     const r_noi = r_gross - r_exp;
     const r_net = r_noi - debtSvc;
     
-    // IRR flow
-    if(y===v.hold) flows.push(r_net + netExit);
-    else flows.push(r_net); // NPV/IRR logic usually adds net rent AND exit proceeds in final year
+    // For IRR/NPV, we include reversion in the final year
+    if(y===v.hold) cashflows.push(r_net + netExit);
+    else cashflows.push(r_net);
 
-    // For table display
     tableRows.push({ y, rev:r_gross, exp:r_exp, n:r_noi, d:debtSvc, net:r_net });
   }
-  // Add exit to last year logic for 'flows' array used for IRR/NPV
-  // Note: The loop pushed (r_net + netExit) correctly.
 
   return { v, build: totalBuild, cont: baseBuild*v.cont, acq: v.purch+v.acq, intWorks, gdc, reqEq: equity, grossRent, egi: grossRent, opex: expense, noi, debtSvc, cf1, exitVal, salesCosts: salesFees, balance, netEquityExit: netExit, profit, cashflows, tableRows };
 }
 
 // --- UI UPDATER ---
 function updateUI() {
-  // Run Main Calculation from DOM
-  const res = calculate();
-  const v = res.v;
+  const domInputs = getDOMInputs();
+  const res = calculate(domInputs);
+  const v = domInputs; // Alias for cleaner code
   
   // Helper to set text
   const set = (id, val) => { const e = el(id); if(e) e.textContent = val; };
@@ -363,32 +356,33 @@ function renderCashflowTable(rows) {
   });
 }
 
-function renderSens(baseV) {
+// --- REAL SENSITIVITY ENGINE (NO MORE PLACEHOLDERS) ---
+function renderSens(baseInputs) {
   const tb = el("tblSens");
-  // Header
   let html = "<thead><tr><th style='background:#f0f0f0'>Build Cost \\ Rent</th><th class='center'>-10%</th><th class='center'>Base</th><th class='center'>+10%</th></tr></thead><tbody>";
 
-  const costVars = [0.9, 1.0, 1.1]; // Build Cost Modifiers
-  const rentVars = [0.9, 1.0, 1.1]; // Rent Modifiers
+  const costVars = [0.9, 1.0, 1.1]; // Cost multipliers
+  const rentVars = [0.9, 1.0, 1.1]; // Rent multipliers
   const labels = ["-10% Cost", "Base Cost", "+10% Cost"];
 
   costVars.forEach((cMult, i) => {
     html += `<tr><td style='font-weight:bold;background:#f9f9f9'>${labels[i]}</td>`;
 
     rentVars.forEach((rMult, j) => {
-       // 1. Clone Inputs
-       let input = Object.assign({}, baseV);
+       // 1. CLONE Inputs
+       let sim = Object.assign({}, baseInputs);
 
-       // 2. Apply Modifiers
-       input.rent = baseV.rent * rMult;
-       input.ref = baseV.ref * cMult; 
-       input.dev = baseV.dev * cMult;
+       // 2. MODIFY Inputs
+       sim.rent = baseInputs.rent * rMult; 
+       // Scale all build costs
+       sim.ref = baseInputs.ref * cMult; 
+       sim.dev = baseInputs.dev * cMult;
 
-       // 3. Recalculate
-       const res = calculate(input);
+       // 3. RUN Calc
+       const res = calculate(sim);
 
-       // 4. Get NPV
-       const val = npv(input.discount, res.cashflows);
+       // 4. GET NPV
+       const val = npv(sim.discount, res.cashflows);
 
        // 5. Highlight Base Case
        const isBase = (i===1 && j===1);
@@ -439,6 +433,9 @@ function syncScenario() {
 // --- CLEAN EXPORTS ---
 function downloadCSV() {
   const clean = (id) => el(id).innerText.replace(/[£,\s]/g,'');
+  const dom = getDOMInputs(); // Get raw inputs
+  const res = calculate(dom); // Get results
+  
   const rows = [
     ["Property Report"],
     ["Total GDC", clean("kpiGdc")],
@@ -446,8 +443,8 @@ function downloadCSV() {
     ["Profit", clean("kpiProfit")],
     ["IRR", el("kpiIrr").innerText],
     [""],
-    ["Purchase Price", el("inPurchase").value],
-    ["Loan Amount", el("inLoan").value]
+    ["Purchase Price", dom.purch],
+    ["Loan Amount", dom.loan]
   ];
   let csvContent = "\uFEFF" + rows.map(e => e.join(",")).join("\n");
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -456,7 +453,7 @@ function downloadCSV() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// --- ROBUST PRINT FUNCTION ---
+// --- PRINT FUNCTION ---
 function printReport() {
   // Bake inputs
   document.querySelectorAll("input").forEach(i => i.setAttribute('value', i.value));
