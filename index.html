@@ -12,6 +12,8 @@
             --text-color: #333;
             --bg-color: #f8f9fa;
             --white: #ffffff;
+            --active-tab: #0d2e48;
+            --inactive-tab: #e2e8f0;
         }
 
         body {
@@ -36,11 +38,43 @@
             color: var(--primary-color);
             text-align: center;
             font-size: 24px;
-            margin-bottom: 30px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
 
+        /* --- TABS --- */
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: var(--inactive-tab);
+            color: #666;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:first-child {
+            border-top-left-radius: 8px;
+        }
+        
+        .tab-btn:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--active-tab);
+            color: white;
+            border-bottom: 2px solid var(--active-tab);
+        }
+
+        /* Inputs */
         h2 {
             color: var(--accent-color);
             font-size: 18px;
@@ -50,7 +84,6 @@
             padding-left: 10px;
         }
 
-        /* Grid Layout for Inputs */
         .input-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -69,21 +102,16 @@
             color: #555;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
-            box-sizing: border-box; /* Ensures padding doesn't break width */
+            box-sizing: border-box;
         }
 
-        input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        /* Results Section */
+        /* Results */
         .results-box {
             background-color: #eef2f5;
             padding: 20px;
@@ -108,7 +136,7 @@
             padding-top: 10px;
         }
 
-        /* Sensitivity Matrix Table */
+        /* Sensitivity Matrix */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -127,7 +155,7 @@
             color: white;
         }
 
-        /* Button Styling */
+        /* PDF Button Area */
         .button-area {
             text-align: center;
             margin-top: 30px;
@@ -150,35 +178,35 @@
             background-color: #1a4a70;
         }
 
-        /* Mobile Responsive */
         @media (max-width: 600px) {
-            .input-grid {
-                grid-template-columns: 1fr;
-            }
-            #calculator-container {
-                padding: 20px;
-            }
+            .input-grid { grid-template-columns: 1fr; }
+            #calculator-container { padding: 20px; }
         }
     </style>
 </head>
 <body>
 
     <div id="calculator-container">
-        <h1>EAS Finance | Development Analyser</h1>
+        <h1>EAS Finance | Deal Analyser</h1>
         
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('refurb', this)">Refurbishment</button>
+            <button class="tab-btn" onclick="switchTab('groundup', this)">Ground-Up Development</button>
+        </div>
+
         <h2>Project Inputs</h2>
         <div class="input-grid">
             <div class="input-group">
                 <label>Gross Development Value (GDV)</label>
-                <input type="number" id="gdv" value="1000000" oninput="calculate()">
+                <input type="number" id="gdv" value="850000" oninput="calculate()">
             </div>
             <div class="input-group">
                 <label>Purchase Price</label>
-                <input type="number" id="purchase" value="300000" oninput="calculate()">
+                <input type="number" id="purchase" value="450000" oninput="calculate()">
             </div>
             <div class="input-group">
-                <label>Build Costs</label>
-                <input type="number" id="build" value="400000" oninput="calculate()">
+                <label id="cost-label">Refurb Costs</label>
+                <input type="number" id="build" value="150000" oninput="calculate()">
             </div>
             <div class="input-group">
                 <label>Professional Fees (%)</label>
@@ -186,11 +214,11 @@
             </div>
             <div class="input-group">
                 <label>Finance Cost / Interest (£)</label>
-                <input type="number" id="interest" value="45000" oninput="calculate()">
+                <input type="number" id="interest" value="35000" oninput="calculate()">
             </div>
             <div class="input-group">
                 <label>Contingency (£)</label>
-                <input type="number" id="contingency" value="20000" oninput="calculate()">
+                <input type="number" id="contingency" value="15000" oninput="calculate()">
             </div>
         </div>
 
@@ -216,7 +244,7 @@
 
         <h2>Sensitivity Matrix (Stress Test)</h2>
         <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
-            Shows how profit is affected if Build Costs rise or GDV falls.
+            Shows impact if GDV falls or Costs rise by 10%.
         </p>
         <table id="sensitivity-table">
             <thead>
@@ -253,9 +281,27 @@
     </div>
 
     <script>
-        // Formatter for Currency
         const fmtMoney = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
 
+        // --- TAB LOGIC ---
+        function switchTab(mode, btn) {
+            // 1. Update visual buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 2. Change Label logic
+            const costLabel = document.getElementById('cost-label');
+            if (mode === 'refurb') {
+                costLabel.innerText = "Refurb Costs";
+                // Optional: You could set default values here if needed
+            } else {
+                costLabel.innerText = "Build Costs";
+            }
+            // Recalculate immediately
+            calculate();
+        }
+
+        // --- CALCULATOR LOGIC ---
         function calculate() {
             // 1. Get Values
             let gdv = parseFloat(document.getElementById('gdv').value) || 0;
@@ -287,11 +333,10 @@
             updateMatrix(gdv, totalCosts, build);
         }
 
+        // --- MATRIX LOGIC ---
         function updateMatrix(baseGDV, baseTotalCosts, baseBuild) {
-            // We calculate profit for 6 scenarios
-            // Note: If Costs rise by 10%, we assume it applies to the Build portion
-            
-            let costRise = baseBuild * 0.10; // 10% of build
+            // Stress Test: 10% rise in Build/Refurb costs only
+            let costRise = baseBuild * 0.10; 
             let costHigh = baseTotalCosts + costRise;
 
             let gdvLow = baseGDV * 0.90;
@@ -320,7 +365,7 @@
             }
         }
 
-        // --- NEW PDF FUNCTION ---
+        // --- PDF LOGIC ---
         function generatePDF() {
             var element = document.getElementById('calculator-container'); 
             
