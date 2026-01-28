@@ -5,11 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EAS Finance | Development Appraisal</title>
     <style>
-        /* CORE EAS STYLING */
+        :root {
+            --primary-color: #0d2e48;
+            --accent-color: #2c5282;
+            --text-color: #333333;
+            --bg-color: #f8f9fa;
+            --white: #ffffff;
+            --tab-inactive: #e2e8f0;
+            --success: #28a745;
+            --danger: #d9534f;
+        }
+
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
             padding: 20px;
         }
@@ -17,55 +27,54 @@
         #calculator-container {
             max-width: 800px;
             margin: 0 auto;
-            background: #ffffff;
+            background: var(--white);
             padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
 
         h1 {
-            color: #0d2e48; /* EAS Dark Blue */
+            color: var(--primary-color);
             text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: 26px;
+            margin-bottom: 30px;
+            font-weight: 700;
         }
 
-        /* TABS */
         .tabs {
             display: flex;
             margin-bottom: 30px;
-            border-bottom: 2px solid #ddd;
+            background-color: var(--tab-inactive);
+            border-radius: 8px;
+            padding: 4px;
         }
 
         .tab-btn {
             flex: 1;
-            padding: 15px;
+            padding: 12px;
             border: none;
-            background: #e2e8f0;
+            background: transparent;
             color: #666;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            border-radius: 6px;
+            transition: all 0.2s ease;
         }
-
-        .tab-btn:first-child { border-top-left-radius: 8px; }
-        .tab-btn:last-child { border-top-right-radius: 8px; }
 
         .tab-btn.active {
-            background: #0d2e48;
+            background-color: var(--primary-color);
             color: white;
-            border-bottom: 2px solid #0d2e48;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* INPUTS */
         h2 {
-            color: #2c5282;
+            color: var(--accent-color);
             font-size: 18px;
-            margin-top: 25px;
+            margin-top: 30px;
             margin-bottom: 15px;
-            border-left: 4px solid #2c5282;
-            padding-left: 10px;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 12px;
         }
 
         .input-grid {
@@ -74,257 +83,215 @@
             gap: 20px;
         }
 
-        .input-group { margin-bottom: 15px; }
-
         label {
             display: block;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 6px;
             color: #555;
+            text-transform: uppercase;
         }
 
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+            border-radius: 6px;
+            font-size: 15px;
             box-sizing: border-box;
         }
 
-        /* RESULTS */
         .results-box {
-            background-color: #eef2f5;
-            padding: 20px;
-            border-radius: 6px;
+            background-color: #f1f5f9;
+            padding: 25px;
+            border-radius: 8px;
             margin-top: 30px;
-            border: 1px solid #d1d9e0;
+            border: 1px solid #e2e8f0;
         }
 
         .result-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             font-size: 15px;
         }
 
         .result-row.highlight {
-            font-weight: bold;
-            color: #0d2e48;
-            font-size: 18px;
-            margin-top: 15px;
-            border-top: 1px solid #ccc;
-            padding-top: 10px;
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 20px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #cbd5e0;
         }
 
-        /* SENSITIVITY TABLE */
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin-top: 15px;
-            font-size: 13px;
+            font-size: 14px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
         }
 
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px;
             text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
         }
 
-        th {
-            background-color: #0d2e48;
-            color: white;
-        }
-
-        /* Footer */
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 12px;
-            color: #888;
-        }
+        th { background-color: var(--primary-color); color: white; }
 
         @media (max-width: 600px) {
             .input-grid { grid-template-columns: 1fr; }
-            #calculator-container { padding: 20px; }
         }
     </style>
 </head>
 <body>
 
-<div id="calculator-container">
-    <h1>EAS Finance | Deal Analyser</h1>
+    <div id="calculator-container">
+        <h1>EAS Finance | Deal Analyser</h1>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('refurb', this)">Refurbishment</button>
-        <button class="tab-btn" onclick="switchTab('groundup', this)">Ground-Up Development</button>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('refurb', this)">Refurbishment</button>
+            <button class="tab-btn" onclick="switchTab('groundup', this)">Ground-Up Development</button>
+        </div>
+
+        <h2>Project Inputs</h2>
+        <div class="input-grid">
+            <div class="input-group">
+                <label>Gross Development Value (GDV)</label>
+                <input type="number" id="gdv" value="850000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Purchase Price</label>
+                <input type="number" id="purchase" value="450000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label id="cost-label">Refurb Costs</label>
+                <input type="number" id="build" value="150000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Professional Fees (%)</label>
+                <input type="number" id="fees" value="10" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Finance Cost / Interest (£)</label>
+                <input type="number" id="interest" value="35000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Contingency (£)</label>
+                <input type="number" id="contingency" value="15000" oninput="calculate()">
+            </div>
+        </div>
+
+        <h2>Deal Summary</h2>
+        <div class="results-box">
+            <div class="result-row">
+                <span>Total Project Costs:</span>
+                <span id="total-costs">£0</span>
+            </div>
+            <div class="result-row highlight">
+                <span>Net Profit:</span>
+                <span id="net-profit">£0</span>
+            </div>
+            <div class="result-row">
+                <span>Profit on Cost (ROC):</span>
+                <span id="roi">0%</span>
+            </div>
+            <div class="result-row">
+                <span>Profit on GDV:</span>
+                <span id="margin">0%</span>
+            </div>
+        </div>
+
+        <h2>Sensitivity Matrix (Stress Test)</h2>
+        <table id="sensitivity-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>GDV -10%</th>
+                    <th>Base GDV</th>
+                    <th>GDV +10%</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Base Costs</strong></td>
+                    <td id="scen-1"></td>
+                    <td id="scen-2" style="background:#e6fffa; font-weight:bold;"></td>
+                    <td id="scen-3"></td>
+                </tr>
+                <tr>
+                    <td><strong>Costs +10%</strong></td>
+                    <td id="scen-4" style="background:#fff5f5;"></td>
+                    <td id="scen-5"></td>
+                    <td id="scen-6"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #888;">
+            Prepared by EAS Finance | www.easfinance.co.uk
+        </div>
     </div>
 
-    <h2>Project Inputs</h2>
-    <div class="input-grid">
-        <div class="input-group">
-            <label>Gross Development Value (GDV)</label>
-            <input type="number" id="gdv" value="850000" oninput="calculate()">
-        </div>
-        <div class="input-group">
-            <label>Purchase Price</label>
-            <input type="number" id="purchase" value="450000" oninput="calculate()">
-        </div>
-        <div class="input-group">
-            <label id="cost-label">Refurb Costs</label>
-            <input type="number" id="build" value="150000" oninput="calculate()">
-        </div>
-        <div class="input-group">
-            <label>Professional Fees (%)</label>
-            <input type="number" id="fees" value="10" oninput="calculate()">
-        </div>
-        <div class="input-group">
-            <label>Finance Cost / Interest (£)</label>
-            <input type="number" id="interest" value="35000" oninput="calculate()">
-        </div>
-        <div class="input-group">
-            <label>Contingency (£)</label>
-            <input type="number" id="contingency" value="15000" oninput="calculate()">
-        </div>
-    </div>
+    <script>
+        const fmtMoney = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
 
-    <h2>Deal Summary</h2>
-    <div class="results-box">
-        <div class="result-row">
-            <span>Total Project Costs:</span>
-            <span id="total-costs">£0</span>
-        </div>
-        <div class="result-row highlight">
-            <span>Net Profit:</span>
-            <span id="net-profit">£0</span>
-        </div>
-        <div class="result-row">
-            <span>Profit on Cost (ROC):</span>
-            <span id="roi">0%</span>
-        </div>
-        <div class="result-row">
-            <span>Profit on GDV:</span>
-            <span id="margin">0%</span>
-        </div>
-    </div>
-
-    <h2>Sensitivity Matrix (Stress Test)</h2>
-    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
-        Shows impact if GDV falls or Costs rise by 10%.
-    </p>
-    <table id="sensitivity-table">
-        <thead>
-            <tr>
-                <th>Scenario</th>
-                <th>GDV -10%</th>
-                <th>Base GDV</th>
-                <th>GDV +10%</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><strong>Base Costs</strong></td>
-                <td id="scen-1"></td>
-                <td id="scen-2" style="background:#e6fffa;"></td>
-                <td id="scen-3"></td>
-            </tr>
-            <tr>
-                <td><strong>Costs +10%</strong></td>
-                <td id="scen-4" style="background:#fff5f5;"></td>
-                <td id="scen-5"></td>
-                <td id="scen-6"></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <div class="footer">
-        Prepared by EAS Finance | www.easfinance.co.uk
-    </div>
-</div>
-
-<script>
-    const fmtMoney = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
-
-    // --- TAB LOGIC ---
-    function switchTab(mode, btn) {
-        // Reset active state
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        // Change Label
-        const costLabel = document.getElementById('cost-label');
-        if (mode === 'refurb') {
-            costLabel.innerText = "Refurb Costs";
-        } else {
-            costLabel.innerText = "Build Costs";
+        function switchTab(mode, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const costLabel = document.getElementById('cost-label');
+            costLabel.innerText = mode === 'refurb' ? "Refurb Costs" : "Build Costs";
+            calculate();
         }
+
+        function calculate() {
+            let gdv = parseFloat(document.getElementById('gdv').value) || 0;
+            let purchase = parseFloat(document.getElementById('purchase').value) || 0;
+            let build = parseFloat(document.getElementById('build').value) || 0;
+            let feesPercent = parseFloat(document.getElementById('fees').value) || 0;
+            let interest = parseFloat(document.getElementById('interest').value) || 0;
+            let contingency = parseFloat(document.getElementById('contingency').value) || 0;
+
+            let feeAmount = (build + purchase) * (feesPercent / 100);
+            let totalCosts = purchase + build + feeAmount + interest + contingency;
+            let profit = gdv - totalCosts;
+            
+            document.getElementById('total-costs').innerText = fmtMoney.format(totalCosts);
+            document.getElementById('net-profit').innerText = fmtMoney.format(profit);
+            document.getElementById('roi').innerText = totalCosts > 0 ? ((profit / totalCosts) * 100).toFixed(2) + "%" : "0%";
+            document.getElementById('margin').innerText = gdv > 0 ? ((profit / gdv) * 100).toFixed(2) + "%" : "0%";
+            document.getElementById('net-profit').style.color = profit >= 0 ? "var(--primary-color)" : "var(--danger)";
+
+            updateMatrix(gdv, totalCosts, build);
+        }
+
+        function updateMatrix(baseGDV, baseTotalCosts, baseBuild) {
+            let costRise = baseBuild * 0.10;
+            let costHigh = baseTotalCosts + costRise;
+            let gdvLow = baseGDV * 0.90;
+            let gdvHigh = baseGDV * 1.10;
+
+            setCell('scen-1', gdvLow - baseTotalCosts);
+            setCell('scen-2', baseGDV - baseTotalCosts);
+            setCell('scen-3', gdvHigh - baseTotalCosts);
+            setCell('scen-4', gdvLow - costHigh);
+            setCell('scen-5', baseGDV - costHigh);
+            setCell('scen-6', gdvHigh - costHigh);
+        }
+
+        function setCell(id, value) {
+            let el = document.getElementById(id);
+            el.innerText = fmtMoney.format(value);
+            el.style.color = value < 0 ? "var(--danger)" : "var(--success)";
+        }
+
         calculate();
-    }
-
-    // --- CALCULATION LOGIC ---
-    function calculate() {
-        let gdv = parseFloat(document.getElementById('gdv').value) || 0;
-        let purchase = parseFloat(document.getElementById('purchase').value) || 0;
-        let build = parseFloat(document.getElementById('build').value) || 0;
-        let feesPercent = parseFloat(document.getElementById('fees').value) || 0;
-        let interest = parseFloat(document.getElementById('interest').value) || 0;
-        let contingency = parseFloat(document.getElementById('contingency').value) || 0;
-
-        let feeAmount = (build + purchase) * (feesPercent / 100);
-        let totalCosts = purchase + build + feeAmount + interest + contingency;
-        let profit = gdv - totalCosts;
-        
-        let roi = totalCosts > 0 ? (profit / totalCosts) * 100 : 0;
-        let margin = gdv > 0 ? (profit / gdv) * 100 : 0;
-
-        // Update Summary
-        document.getElementById('total-costs').innerText = fmtMoney.format(totalCosts);
-        document.getElementById('net-profit').innerText = fmtMoney.format(profit);
-        document.getElementById('roi').innerText = roi.toFixed(2) + "%";
-        document.getElementById('margin').innerText = margin.toFixed(2) + "%";
-
-        // Color Logic
-        document.getElementById('net-profit').style.color = profit >= 0 ? "#0d2e48" : "#d9534f";
-
-        // Update Matrix
-        updateMatrix(gdv, totalCosts, build);
-    }
-
-    // --- MATRIX LOGIC ---
-    function updateMatrix(baseGDV, baseTotalCosts, baseBuild) {
-        // Stress Test: 10% rise in Build/Refurb costs only
-        let costRise = baseBuild * 0.10; 
-        let costHigh = baseTotalCosts + costRise;
-
-        let gdvLow = baseGDV * 0.90;
-        let gdvHigh = baseGDV * 1.10;
-
-        // Row 1: Base Costs
-        setCell('scen-1', gdvLow - baseTotalCosts);
-        setCell('scen-2', baseGDV - baseTotalCosts); 
-        setCell('scen-3', gdvHigh - baseTotalCosts);
-
-        // Row 2: Costs +10%
-        setCell('scen-4', gdvLow - costHigh); 
-        setCell('scen-5', baseGDV - costHigh);
-        setCell('scen-6', gdvHigh - costHigh);
-    }
-
-    function setCell(id, value) {
-        let el = document.getElementById(id);
-        el.innerText = fmtMoney.format(value);
-        if(value < 0) {
-            el.style.color = "#d9534f"; 
-            el.style.fontWeight = "bold";
-        } else {
-            el.style.color = "#28a745"; 
-        }
-    }
-
-    // Initialize
-    calculate();
-</script>
-
+    </script>
 </body>
 </html>
