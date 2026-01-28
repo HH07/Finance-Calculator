@@ -8,19 +8,19 @@
   /* --- CORE STYLES --- */
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
   .wrap { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-  h1 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+  h1 { margin-top: 0; color: #0d2e48; border-bottom: 2px solid #eee; padding-bottom: 15px; }
   
   /* Buttons */
   .btnbar { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
   button { padding: 10px 20px; border: 1px solid #ccc; background: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
   button:hover { background: #f0f0f0; }
-  button.primary { background: #2c3e50; color: white; border-color: #2c3e50; }
-  button.primary:hover { background: #34495e; }
+  button.primary { background: #0d2e48; color: white; border-color: #0d2e48; }
+  button.primary:hover { background: #1a4a70; }
 
   /* Tabs */
   .tabs { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; gap: 5px; }
   .tabbtn { padding: 12px 20px; background: #f9f9f9; border: 1px solid #e0e0e0; border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; color: #666; font-weight: 500; }
-  .tabbtn.active { background: #fff; color: #2c3e50; font-weight: bold; border-top: 3px solid #2c3e50; border-bottom: 2px solid #fff; margin-bottom: -2px; }
+  .tabbtn.active { background: #fff; color: #0d2e48; font-weight: bold; border-top: 3px solid #0d2e48; border-bottom: 2px solid #fff; margin-bottom: -2px; }
   .tabpage { display: none; }
   .tabpage.active { display: block; animation: fadeIn 0.3s; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
@@ -29,22 +29,21 @@
   table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
   td, th { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
   th { text-align: left; background: #f8f9fa; color: #555; font-weight: 600; }
-  .section-header { background: #eef2f5; padding: 10px 15px; font-weight: 700; color: #2c3e50; margin-top: 25px; border-radius: 4px; }
+  .section-header { background: #eef2f5; padding: 10px 15px; font-weight: 700; color: #0d2e48; margin-top: 25px; border-radius: 4px; }
   
   input, select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-  input:focus { border-color: #2c3e50; outline: none; }
+  input:focus { border-color: #0d2e48; outline: none; }
 
   /* Output Cells */
-  .cellOutput { font-family: 'Consolas', monospace; font-weight: 700; text-align: right; color: #2c3e50; }
+  .cellOutput { font-family: 'Consolas', monospace; font-weight: 700; text-align: right; color: #0d2e48; }
   .right { text-align: right; }
   .center { text-align: center; }
-  .small { font-size: 12px; color: #888; }
 
   /* Grid for Dashboard */
   .kpiGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
   @media(max-width:768px) { .kpiGrid { grid-template-columns: 1fr; } }
   .card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
-  .card h3 { background: #fff; padding: 15px; margin: 0; border-bottom: 1px solid #e0e0e0; font-size: 16px; color: #2c3e50; }
+  .card h3 { background: #fff; padding: 15px; margin: 0; border-bottom: 1px solid #e0e0e0; font-size: 16px; color: #0d2e48; }
   .card .body { padding: 15px; background: #fff; }
 </style>
 </head>
@@ -54,7 +53,7 @@
   <h1>Property Investment Calculator</h1>
   
   <div class="btnbar">
-    <button class="primary" onclick="if(confirm('Reset all data?')) location.reload()">🔄 Reset</button>
+    <button class="primary" onclick="resetToZero()">🔄 Reset to Zero</button>
   </div>
 
   <div class="tabs">
@@ -116,7 +115,6 @@
       <tr class="dev-row" style="display:none"><td>Construction (£)</td><td><input type="number" id="inDevBuild" value="0"></td></tr>
       <tr class="dev-row" style="display:none"><td>Pro Fees (£)</td><td><input type="number" id="inDevPro" value="0"></td></tr>
       <tr class="dev-row" style="display:none"><td>Other Dev (£)</td><td><input type="number" id="inDevOther" value="0"></td></tr>
-      
       <tr><td>Contingency (%)</td><td><input type="number" id="inCont" value="10"></td></tr>
     </table>
 
@@ -188,7 +186,7 @@
       <h3>Sensitivity Analysis (NPV)</h3>
       <div class="body">
         <table id="tblSens"></table>
-        <p class="center small">Rows: Build Cost Variance (-10% / +10%) | Cols: Rent Variance (-10% / +10%)</p>
+        <p class="center small" style="color: #888; font-size: 12px; margin-top: 10px;">Rows: Build Cost Variance (-10% / +10%) | Cols: Rent Variance (-10% / +10%)</p>
       </div>
     </div>
   </div>
@@ -218,14 +216,26 @@ function pmt(rate, nper, pv) {
   const pvif = Math.pow(1+rate, nper);
   return -(rate*pv*pvif)/(pvif-1);
 }
+
 function irr(values) {
   let r=0.1; for(let i=0;i<100;i++){ let n=0,d=0;
     for(let j=0;j<values.length;j++){ n+=values[j]/Math.pow(1+r,j); d-=j*values[j]/Math.pow(1+r,j+1); }
     let nr=r-n/d; if(Math.abs(nr-r)<1e-6) return nr; r=nr;
   } return NaN;
 }
+
 function npv(rate, values) {
   return values.reduce((acc, curr, i) => acc + curr / Math.pow(1 + rate, i), 0);
+}
+
+// LOGIC FOR RESET TO ZERO
+function resetToZero() {
+  if(confirm('Clear all data and reset all fields to 0?')) {
+    document.querySelectorAll('input[type="number"]').forEach(input => input.value = 0);
+    document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+    syncScenario();
+    updateUI();
+  }
 }
 
 function calculate(inputOverrides = null) {
@@ -288,7 +298,7 @@ function calculate(inputOverrides = null) {
     tableRows.push({ y, rev:r_gross, exp:r_exp, n:r_noi, d:debtSvc, net:r_net });
   }
 
-  return { v, build: totalBuild, cont: baseBuild*v.cont, acq: v.purch+v.acq, intWorks, gdc, reqEq: equity, grossRent, egi: grossRent, opex: expense, noi, debtSvc, cf1, exitVal, salesCosts: salesFees, balance, netEquityExit: netExit, profit, cashflows: flows, tableRows };
+  return { v, build: totalBuild, cont: baseBuild*v.cont, acq: v.purch+v.acq, intWorks, gdc, reqEq: equity, grossRent, noi, debtSvc, cf1, exitVal, salesCosts: salesFees, balance, netEquityExit: netExit, profit, cashflows: flows, tableRows };
 }
 
 function updateUI() {
@@ -301,7 +311,8 @@ function updateUI() {
   set("kpiGdc", fmtGBP(res.gdc)); set("kpiEq", fmtGBP(res.reqEq));
   set("kpiProfit", fmtGBP(res.profit));
   set("kpiCf1", fmtGBP(res.cf1));
-  set("kpiGY", fmtPct(res.grossRent/res.gdc)); set("kpiNY", fmtPct(res.noi/res.gdc));
+  set("kpiGY", fmtPct(res.gdc > 0 ? res.grossRent/res.gdc : 0)); 
+  set("kpiNY", fmtPct(res.gdc > 0 ? res.noi/res.gdc : 0));
   
   const irrVal = irr(res.cashflows); 
   set("kpiIrr", isNaN(irrVal) ? "-" : fmtPct(irrVal));
