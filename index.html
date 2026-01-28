@@ -1,455 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Property Investment Calculator</title>
-<style>
-  /* --- CORE STYLES --- */
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
-  .wrap { max-width: 1150px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border-top: 6px solid #2c3e50; }
-  h1 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-  
-  /* Buttons */
-  .btnbar { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; background: #eee; padding: 10px; border-radius: 8px; }
-  button { padding: 10px 20px; border: 1px solid #ccc; background: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-  button:hover { background: #f9f9f9; transform: translateY(-1px); }
-  button.primary { background: #2c3e50; color: white; border-color: #2c3e50; }
-  button.primary:hover { background: #34495e; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EAS Finance | Development Appraisal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0d2e48; /* EAS Finance Dark Blue */
+            --accent-color: #2c5282;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --white: #ffffff;
+        }
 
-  /* Tabs */
-  .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; gap: 5px; }
-  .tabbtn { padding: 12px 20px; background: #f1f1f1; border: 1px solid #ddd; border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; color: #666; font-weight: 500; }
-  .tabbtn.active { background: #fff; color: #2c3e50; font-weight: bold; border-top: 3px solid #2c3e50; border-bottom: 2px solid #fff; margin-bottom: -2px; }
-  .tabpage { display: none; }
-  .tabpage.active { display: block; animation: fadeIn 0.3s; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
 
-  /* Tables & Inputs */
-  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
-  td, th { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
-  th { text-align: left; background: #f8f9fa; color: #555; font-weight: 600; }
-  .section-header { background: #eef2f5; padding: 10px 15px; font-weight: 700; color: #2c3e50; margin-top: 25px; border-radius: 4px; border-left: 4px solid #2c3e50; }
-  
-  input, select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; font-weight: 500; }
-  input:focus { border-color: #2c3e50; outline: none; background: #fdfdfd; }
+        /* The Main Container - Targeted for PDF Generation */
+        #calculator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
 
-  /* Output Cells */
-  .cellOutput { font-family: 'Consolas', monospace; font-weight: 700; text-align: right; color: #2c3e50; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; }
-  .right { text-align: right; }
-  .center { text-align: center; }
-  .small { font-size: 12px; color: #888; }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
 
-  /* Grid */
-  .kpiGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-  @media(max-width:768px) { .kpiGrid { grid-template-columns: 1fr; } }
-  .card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fff; }
-  .card h3 { background: #fff; padding: 15px; margin: 0; border-bottom: 1px solid #e0e0e0; font-size: 16px; color: #2c3e50; }
-  .card .body { padding: 15px; }
+        h2 {
+            color: var(--accent-color);
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 10px;
+        }
 
-  /* --- PRINT STYLES --- */
-  @media print {
-    body { background: white; padding: 0; }
-    .wrap { box-shadow: none; max-width: 100%; padding: 0; margin: 0; border: none; }
-    .btnbar, .tabs { display: none !important; }
-    .tabpage { display: block !important; margin-bottom: 30px; page-break-inside: avoid; }
-    .section-header { border: 1px solid #ccc; background: #eee !important; -webkit-print-color-adjust: exact; }
-    input, select { border: none; background: transparent; padding: 0; -webkit-appearance: none; font-weight: bold; }
-    .card { break-inside: avoid; border: 1px solid #999; page-break-inside: avoid; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  }
-</style>
+        /* Grid Layout for Inputs */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box; /* Ensures padding doesn't break width */
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Results Section */
+        .results-box {
+            background-color: #eef2f5;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 30px;
+            border: 1px solid #d1d9e0;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .result-row.highlight {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 18px;
+            margin-top: 15px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        /* Sensitivity Matrix Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Button Styling */
+        .button-area {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+
+        .btn-pdf {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-pdf:hover {
+            background-color: #1a4a70;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            #calculator-container {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="wrap">
-  <h1>Property Investment Calculator <span style="font-size:14px; color:red; vertical-align:middle; background:#ffebeb; padding:2px 6px; border-radius:4px;">v3.0 FINAL</span></h1>
-  
-  <div class="btnbar">
-    <button class="primary" onclick="printReport()">🖨️ Print / Save PDF</button>
-    <button onclick="downloadCSV()">📊 Export CSV</button>
-    <button onclick="if(confirm('Reset all data?')) location.reload()">🔄 Reset</button>
-  </div>
-
-  <div class="tabs">
-    <button class="tabbtn active" onclick="switchTab('dash', this)">Dashboard</button>
-    <button class="tabbtn" onclick="switchTab('inputs', this)">Inputs (Edit)</button>
-    <button class="tabbtn" onclick="switchTab('outputs', this)">Detailed Outputs</button>
-    <button class="tabbtn" onclick="switchTab('cash', this)">Cashflows</button>
-    <button class="tabbtn" onclick="switchTab('sens', this)">Sensitivity</button>
-    <button class="tabbtn" onclick="switchTab('amort', this)">Amortization</button>
-  </div>
-
-  <div id="tab-dash" class="tabpage active">
-    <div class="kpiGrid">
-      <div class="card">
-        <h3>Scenario Summary</h3>
-        <div class="body">
-          <table style="margin:0">
-            <tr><td>Strategy</td><td class="right" id="kpiScenario">-</td></tr>
-            <tr><td>Units</td><td class="right" id="kpiUnits">-</td></tr>
-            <tr><td>Hold Period</td><td class="right"><span id="kpiHold"></span> Years</td></tr>
-          </table>
+    <div id="calculator-container">
+        <h1>EAS Finance | Development Analyser</h1>
+        
+        <h2>Project Inputs</h2>
+        <div class="input-grid">
+            <div class="input-group">
+                <label>Gross Development Value (GDV)</label>
+                <input type="number" id="gdv" value="1000000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Purchase Price</label>
+                <input type="number" id="purchase" value="300000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Build Costs</label>
+                <input type="number" id="build" value="400000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Professional Fees (%)</label>
+                <input type="number" id="fees" value="10" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Finance Cost / Interest (£)</label>
+                <input type="number" id="interest" value="45000" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Contingency (£)</label>
+                <input type="number" id="contingency" value="20000" oninput="calculate()">
+            </div>
         </div>
-      </div>
-      <div class="card">
-        <h3>Key Metrics</h3>
-        <div class="body">
-          <table style="margin:0">
-            <tr><td>Total Project Cost</td><td class="cellOutput" id="kpiGdc">-</td></tr>
-            <tr><td>Required Equity</td><td class="cellOutput" style="color:#c0392b" id="kpiEq">-</td></tr>
-            <tr><td>Profit on Exit</td><td class="cellOutput" style="color:#27ae60" id="kpiProfit">-</td></tr>
-            <tr><td>Net Cashflow (Yr 1)</td><td class="cellOutput" id="kpiCf1">-</td></tr>
-            <tr><td>Yield (Gross / Net)</td><td class="cellOutput"><span id="kpiGY">-</span> / <span id="kpiNY">-</span></td></tr>
-            <tr><td>ROI (IRR)</td><td class="cellOutput" id="kpiIrr">-</td></tr>
-          </table>
+
+        <h2>Deal Summary</h2>
+        <div class="results-box">
+            <div class="result-row">
+                <span>Total Project Costs:</span>
+                <span id="total-costs">£0</span>
+            </div>
+            <div class="result-row highlight">
+                <span>Net Profit:</span>
+                <span id="net-profit">£0</span>
+            </div>
+            <div class="result-row">
+                <span>Profit on Cost (ROC):</span>
+                <span id="roi">0%</span>
+            </div>
+            <div class="result-row">
+                <span>Profit on GDV:</span>
+                <span id="margin">0%</span>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <div id="tab-inputs" class="tabpage">
-    <div class="section-header">1. Scenario & Acquisition</div>
-    <table>
-      <tr><td width="40%">Strategy</td><td><select id="inScenario" onchange="syncScenario()"><option value="Refurb-to-Rent">Refurb-to-Rent</option><option value="Ground-up Development">Ground-up Development</option></select></td></tr>
-      <tr><td>Units</td><td><input type="number" id="inUnits" value="2"></td></tr>
-      <tr><td>Purchase Price (£)</td><td><input type="number" id="inPurchase" value="250000"></td></tr>
-      <tr><td>Stamp Duty (£)</td><td><input type="number" id="inStamp" value="3000"></td></tr>
-      <tr><td>Legal Fees (£)</td><td><input type="number" id="inLegal" value="1500"></td></tr>
-      <tr><td>Agent Fees (£)</td><td><input type="number" id="inAgent" value="2500"></td></tr>
-      <tr><td>Other Costs (£)</td><td><input type="number" id="inOtherAcq" value="0"></td></tr>
-    </table>
-
-    <div class="section-header">2. Construction</div>
-    <table>
-      <tr class="refurb-row"><td>Materials (£)</td><td><input type="number" id="inRefMat" value="15000"></td></tr>
-      <tr class="refurb-row"><td>Labour (£)</td><td><input type="number" id="inRefLab" value="20000"></td></tr>
-      <tr class="refurb-row"><td>Pro Fees (£)</td><td><input type="number" id="inRefPro" value="2000"></td></tr>
-      <tr class="refurb-row"><td>Other Refurb (£)</td><td><input type="number" id="inRefOther" value="1000"></td></tr>
-      <tr class="dev-row" style="display:none"><td>Site/Ground (£)</td><td><input type="number" id="inDevSite" value="0"></td></tr>
-      <tr class="dev-row" style="display:none"><td>Construction (£)</td><td><input type="number" id="inDevBuild" value="0"></td></tr>
-      <tr class="dev-row" style="display:none"><td>Pro Fees (£)</td><td><input type="number" id="inDevPro" value="0"></td></tr>
-      <tr class="dev-row" style="display:none"><td>Other Dev (£)</td><td><input type="number" id="inDevOther" value="0"></td></tr>
-      
-      <tr><td>Contingency (%)</td><td><input type="number" id="inCont" value="10"></td></tr>
-    </table>
-
-    <div class="section-header">3. Finance</div>
-    <table>
-      <tr><td>Loan Amount (£)</td><td><input type="number" id="inLoan" value="200000"></td></tr>
-      <tr><td>Interest Rate (%)</td><td><input type="number" id="inRate" value="6.5" step="0.1"></td></tr>
-      <tr><td>Term (Years)</td><td><input type="number" id="inTerm" value="25"></td></tr>
-      <tr><td>Type</td><td><select id="inType"><option value="Amortising">Amortising</option><option value="Interest-only">Interest-only</option></select></td></tr>
-      <tr><td>Lender Fees (£)</td><td><input type="number" id="inLfee" value="2000"></td></tr>
-      <tr><td>Works Period (Mos)</td><td><input type="number" id="inWorks" value="6"></td></tr>
-    </table>
-
-    <div class="section-header">4. Income & Exit</div>
-    <table>
-      <tr><td>Monthly Rent (Unit) (£)</td><td><input type="number" id="inRent" value="1100"></td></tr>
-      <tr><td>Rent Growth (%)</td><td><input type="number" id="inGrowth" value="3"></td></tr>
-      <tr><td>Opex/Mgmt/Void (%)</td><td><input type="number" id="inOpexPct" value="15"></td></tr>
-      <tr><td>Hold Period (Years)</td><td><input type="number" id="inHold" value="5"></td></tr>
-      <tr><td>Exit Valuation (£)</td><td><input type="number" id="inExitVal" value="350000"></td></tr>
-      <tr><td>Sales Costs (%)</td><td><input type="number" id="inSell" value="2"></td></tr>
-    </table>
-  </div>
-
-  <div id="tab-outputs" class="tabpage">
-    <div class="kpiGrid">
-      <div class="card">
-        <h3>Capital Stack</h3>
-        <div class="body">
-          <table>
-            <tr><td>Purchase & Costs</td><td class="right" id="oAcq">-</td></tr>
-            <tr><td>Construction</td><td class="right" id="oBuild">-</td></tr>
-            <tr><td>Finance Costs</td><td class="right" id="oFin">-</td></tr>
-            <tr style="background:#eef2f5;font-weight:bold"><td>Total GDC</td><td class="right" id="oGdc">-</td></tr>
-            <tr><td>Debt</td><td class="right" id="oLoan">-</td></tr>
-            <tr><td style="color:#c0392b;font-weight:bold">Equity Required</td><td class="right" style="color:#c0392b;font-weight:bold" id="oEq">-</td></tr>
-          </table>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Exit Waterfall</h3>
-        <div class="body">
-          <table>
-            <tr><td>Gross Sale Price</td><td class="right" id="oSale">-</td></tr>
-            <tr><td>Sales Costs</td><td class="right" id="oScost">-</td></tr>
-            <tr><td>Loan Repayment</td><td class="right" id="oBal">-</td></tr>
-            <tr style="background:#eef2f5;font-weight:bold"><td>Net Cash Proceeds</td><td class="right" id="oNet">-</td></tr>
-            <tr><td>Total Profit</td><td class="right" id="oProf">-</td></tr>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="tab-cash" class="tabpage">
-    <div class="card">
-      <h3>Cashflow Forecast</h3>
-      <div class="body table-responsive">
-        <table id="tblCash">
-          <thead><tr><th>Year</th><th>Gross Rent</th><th>Expenses</th><th>NOI</th><th>Debt</th><th>Net Cash</th></tr></thead>
-          <tbody></tbody>
+        <h2>Sensitivity Matrix (Stress Test)</h2>
+        <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+            Shows how profit is affected if Build Costs rise or GDV falls.
+        </p>
+        <table id="sensitivity-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>GDV -10%</th>
+                    <th>Base GDV</th>
+                    <th>GDV +10%</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Base Costs</strong></td>
+                    <td id="scen-1"></td>
+                    <td id="scen-2" style="background:#e6fffa;"></td>
+                    <td id="scen-3"></td>
+                </tr>
+                <tr>
+                    <td><strong>Costs +10%</strong></td>
+                    <td id="scen-4" style="background:#fff5f5;"></td>
+                    <td id="scen-5"></td>
+                    <td id="scen-6"></td>
+                </tr>
+            </tbody>
         </table>
-      </div>
+        
+        <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #888;">
+            <p>Prepared by EAS Finance | www.easfinance.co.uk</p>
+        </div>
     </div>
-  </div>
 
-  <div id="tab-sens" class="tabpage">
-    <div class="card">
-      <h3>Sensitivity Analysis (NPV)</h3>
-      <div class="body">
-        <table id="tblSens"></table>
-        <p class="center small">Rows: Build Cost Variance (-10% / +10%) | Cols: Rent Variance (-10% / +10%)</p>
-      </div>
+    <div class="button-area">
+        <button class="btn-pdf" onclick="generatePDF()">Download Professional PDF</button>
     </div>
-  </div>
 
-  <div id="tab-amort" class="tabpage">
-    <div class="card">
-      <h3>Loan Schedule</h3>
-      <div class="body table-responsive">
-        <table id="tblAmort">
-          <thead><tr><th>Year</th><th>Balance Start</th><th>Interest</th><th>Principal</th><th>Balance End</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+    <script>
+        // Formatter for Currency
+        const fmtMoney = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
 
-</div>
+        function calculate() {
+            // 1. Get Values
+            let gdv = parseFloat(document.getElementById('gdv').value) || 0;
+            let purchase = parseFloat(document.getElementById('purchase').value) || 0;
+            let build = parseFloat(document.getElementById('build').value) || 0;
+            let feesPercent = parseFloat(document.getElementById('fees').value) || 0;
+            let interest = parseFloat(document.getElementById('interest').value) || 0;
+            let contingency = parseFloat(document.getElementById('contingency').value) || 0;
 
-<script>
-// --- UTILS ---
-const el = (id) => document.getElementById(id);
-const val = (id) => parseFloat(el(id).value) || 0;
-const fmtGBP = (n) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
-const fmtPct = (n) => (n*100).toFixed(2) + "%";
+            // 2. Calculate Costs
+            let feeAmount = (build + purchase) * (feesPercent / 100);
+            let totalCosts = purchase + build + feeAmount + interest + contingency;
+            let profit = gdv - totalCosts;
+            
+            // 3. Ratios
+            let roi = totalCosts > 0 ? (profit / totalCosts) * 100 : 0;
+            let margin = gdv > 0 ? (profit / gdv) * 100 : 0;
 
-// --- MATH ---
-function pmt(rate, nper, pv) {
-  if(rate===0) return -(pv/nper);
-  const pvif = Math.pow(1+rate, nper);
-  return -(rate*pv*pvif)/(pvif-1);
-}
-function irr(values) {
-  let r=0.1; for(let i=0;i<100;i++){ let n=0,d=0;
-    for(let j=0;j<values.length;j++){ n+=values[j]/Math.pow(1+r,j); d-=j*values[j]/Math.pow(1+r,j+1); }
-    let nr=r-n/d; if(Math.abs(nr-r)<1e-6) return nr; r=nr;
-  } return NaN;
-}
-function npv(rate, values) {
-  return values.reduce((acc, curr, i) => acc + curr / Math.pow(1 + rate, i), 0);
-}
+            // 4. Update UI
+            document.getElementById('total-costs').innerText = fmtMoney.format(totalCosts);
+            document.getElementById('net-profit').innerText = fmtMoney.format(profit);
+            document.getElementById('roi').innerText = roi.toFixed(2) + "%";
+            document.getElementById('margin').innerText = margin.toFixed(2) + "%";
 
-// --- DATA GATHERING ---
-function getDOMInputs() {
-  return {
-    strat: el("inScenario").value, units: val("inUnits"),
-    purch: val("inPurchase"), acq: val("inStamp")+val("inLegal")+val("inAgent")+val("inOtherAcq"),
-    ref: val("inRefMat")+val("inRefLab")+val("inRefPro")+val("inRefOther"),
-    dev: val("inDevSite")+val("inDevBuild")+val("inDevPro")+val("inDevOther"),
-    cont: val("inCont")/100,
-    loan: val("inLoan"), rate: val("inRate")/100, term: val("inTerm"), type: el("inType").value, lfee: val("inLfee"), works: val("inWorks"),
-    rent: val("inRent"), growth: val("inGrowth")/100, opex: val("inOpexPct")/100, hold: val("inHold"),
-    exit: val("inExitVal"), sell: val("inSell")/100, discount: 0.08
-  };
-}
+            // Color Coding Profit
+            document.getElementById('net-profit').style.color = profit >= 0 ? "#0d2e48" : "#d9534f";
 
-// --- CORE CALCULATOR ---
-function calculate(v) {
-  // 1. Costs
-  const baseBuild = (v.strat === 'Refurb-to-Rent') ? v.ref : v.dev;
-  const totalBuild = baseBuild * (1 + v.cont);
-  const intWorks = v.loan * v.rate * (v.works/12) * 0.5; 
-  const gdc = v.purch + v.acq + totalBuild + v.lfee + intWorks;
-  const equity = Math.max(0, gdc - v.loan);
+            // 5. Update Sensitivity Matrix
+            updateMatrix(gdv, totalCosts, build);
+        }
 
-  // 2. Ops (Yr 1)
-  const grossRent = v.rent * v.units * 12;
-  const expense = grossRent * v.opex;
-  const noi = grossRent - expense;
+        function updateMatrix(baseGDV, baseTotalCosts, baseBuild) {
+            // We calculate profit for 6 scenarios
+            // Note: If Costs rise by 10%, we assume it applies to the Build portion
+            
+            let costRise = baseBuild * 0.10; // 10% of build
+            let costHigh = baseTotalCosts + costRise;
 
-  // 3. Debt
-  let debtSvc = 0;
-  if(v.loan > 0) {
-    if(v.type === 'Interest-only') debtSvc = v.loan * v.rate;
-    else debtSvc = Math.abs(pmt(v.rate/12, v.term*12, v.loan)) * 12;
-  }
-  const cf1 = noi - debtSvc;
+            let gdvLow = baseGDV * 0.90;
+            let gdvHigh = baseGDV * 1.10;
 
-  // 4. Exit
-  let balance = v.loan;
-  if(v.type === 'Amortising' && v.loan > 0) {
-    const r = v.rate/12; const n = v.term*12; const p = v.hold*12;
-    if(p < n) balance = v.loan * (Math.pow(1+r,n) - Math.pow(1+r,p))/(Math.pow(1+r,n)-1);
-    else balance = 0;
-  }
-  const exitVal = v.exit * Math.pow(1.02, v.hold); 
-  const salesFees = exitVal * v.sell;
-  const netExit = exitVal - salesFees - balance;
-  const profit = (exitVal - salesFees) - gdc;
+            // Row 1: Base Costs
+            setCell('scen-1', gdvLow - baseTotalCosts);
+            setCell('scen-2', baseGDV - baseTotalCosts); // The current deal
+            setCell('scen-3', gdvHigh - baseTotalCosts);
 
-  // 5. Cashflows
-  const cashflows = [-equity];
-  const tableRows = [];
-  for(let y=1; y<=v.hold; y++) {
-    const factor = Math.pow(1+v.growth, y-1);
-    const r_gross = grossRent * factor;
-    const r_exp = r_gross * v.opex;
-    const r_noi = r_gross - r_exp;
-    const r_net = r_noi - debtSvc;
-    
-    if(y===v.hold) cashflows.push(r_net + netExit);
-    else cashflows.push(r_net);
+            // Row 2: Costs +10%
+            setCell('scen-4', gdvLow - costHigh); // The "Disaster" scenario
+            setCell('scen-5', baseGDV - costHigh);
+            setCell('scen-6', gdvHigh - costHigh);
+        }
 
-    tableRows.push({ y, rev:r_gross, exp:r_exp, n:r_noi, d:debtSvc, net:r_net });
-  }
+        function setCell(id, value) {
+            let el = document.getElementById(id);
+            el.innerText = fmtMoney.format(value);
+            // Color code: Red if loss, Green if profit
+            if(value < 0) {
+                el.style.color = "#d9534f"; // Red
+                el.style.fontWeight = "bold";
+            } else {
+                el.style.color = "#28a745"; // Green
+            }
+        }
 
-  return { v, build: totalBuild, cont: baseBuild*v.cont, acq: v.purch+v.acq, intWorks, gdc, reqEq: equity, grossRent, egi: grossRent, opex: expense, noi, debtSvc, cf1, exitVal, salesCosts: salesFees, balance, netEquityExit: netExit, profit, cashflows, tableRows };
-}
+        // --- NEW PDF FUNCTION ---
+        function generatePDF() {
+            var element = document.getElementById('calculator-container'); 
+            
+            var opt = {
+                margin:       10, // mm
+                filename:     'EAS_Finance_Appraisal.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 }, // Higher scale = sharper text
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
 
-// --- UI UPDATER ---
-function updateUI() {
-  const domInputs = getDOMInputs();
-  const res = calculate(domInputs);
-  const v = domInputs; 
-  
-  const set = (id, val) => { const e = el(id); if(e) e.textContent = val; };
+            // This triggers the download
+            html2pdf().set(opt).from(element).save();
+        }
 
-  // KPIs
-  set("kpiScenario", v.strat); set("kpiUnits", v.units); set("kpiHold", v.hold);
-  set("kpiGdc", fmtGBP(res.gdc)); set("kpiEq", fmtGBP(res.reqEq));
-  set("kpiProfit", fmtGBP(res.profit));
-  set("kpiCf1", fmtGBP(res.cf1));
-  set("kpiGY", fmtPct(res.grossRent/res.gdc)); set("kpiNY", fmtPct(res.noi/res.gdc));
-  
-  const irrVal = irr(res.cashflows); const npvVal = npv(v.discount, res.cashflows);
-  set("kpiIrr", isNaN(irrVal) ? "-" : fmtPct(irrVal));
-
-  // Outputs Tab
-  set("oAcq", fmtGBP(v.purch + v.acq));
-  set("oBuild", fmtGBP(res.build));
-  set("oFin", fmtGBP(v.lfee + res.intWorks));
-  set("oGdc", fmtGBP(res.gdc)); set("oLoan", fmtGBP(v.loan)); set("oEq", fmtGBP(res.reqEq));
-
-  set("oSale", fmtGBP(res.exitVal));
-  set("oScost", fmtGBP(res.salesCosts)); set("oBal", fmtGBP(res.balance));
-  set("oNet", fmtGBP(res.netEquityExit)); set("oProf", fmtGBP(res.profit));
-
-  renderCashflowTable(res.tableRows);
-  renderSens(v); // Run Sensitivity
-  renderAmort(v.loan, v.rate, v.term, v.type, v.hold);
-}
-
-function renderCashflowTable(rows) {
-  const tbody = el("tblCash").querySelector("tbody");
-  tbody.innerHTML = "";
-  rows.forEach(row => {
-    tbody.innerHTML += `<tr><td>${row.y}</td><td>${fmtGBP(row.rev)}</td><td>${fmtGBP(row.exp)}</td><td>${fmtGBP(row.n)}</td><td>${fmtGBP(row.d)}</td><td><b>${fmtGBP(row.net)}</b></td></tr>`;
-  });
-}
-
-function renderSens(baseInputs) {
-  const tb = el("tblSens");
-  let html = "<thead><tr><th style='background:#f0f0f0'>Build Cost \\ Rent</th><th class='center'>-10%</th><th class='center'>Base</th><th class='center'>+10%</th></tr></thead><tbody>";
-
-  const costVars = [0.9, 1.0, 1.1]; 
-  const rentVars = [0.9, 1.0, 1.1]; 
-  const labels = ["-10% Cost", "Base Cost", "+10% Cost"];
-
-  costVars.forEach((cMult, i) => {
-    html += `<tr><td style='font-weight:bold;background:#f9f9f9'>${labels[i]}</td>`;
-    rentVars.forEach((rMult, j) => {
-       // CLONE & MODIFY
-       let sim = Object.assign({}, baseInputs);
-       sim.rent = baseInputs.rent * rMult; 
-       sim.ref = baseInputs.ref * cMult; 
-       sim.dev = baseInputs.dev * cMult;
-       
-       const res = calculate(sim);
-       const val = npv(sim.discount, res.cashflows);
-       const isBase = (i===1 && j===1);
-       const cellStyle = isBase ? "background:#e8f5e9;font-weight:bold;border:2px solid #a5d6a7" : "";
-       
-       html += `<td class="right" style="${cellStyle}">${fmtGBP(val)}</td>`;
-    });
-    html += "</tr>";
-  });
-  tb.innerHTML = html + "</tbody>";
-}
-
-function renderAmort(loan, rate, term, type, hold) {
-  const tb = el("tblAmort").querySelector("tbody"); tb.innerHTML = "";
-  if(loan <= 0) return;
-  let bal = loan; const mRate = rate/12; 
-  const pmtVal = (type==='Interest-only') ? loan*mRate : Math.abs(pmt(mRate, term*12, loan));
-  
-  for(let y=1; y<=hold; y++) {
-    let iSum=0, pSum=0, start=bal;
-    for(let m=0; m<12; m++) {
-      if(bal<=0.1) break;
-      const interest = bal*mRate;
-      const princ = (type==='Interest-only') ? 0 : (pmtVal - interest);
-      iSum+=interest; pSum+=princ; bal-=princ;
-    }
-    tb.innerHTML += `<tr><td>${y}</td><td>${fmtGBP(start)}</td><td>${fmtGBP(iSum)}</td><td>${fmtGBP(pSum)}</td><td>${fmtGBP(bal)}</td></tr>`;
-  }
-}
-
-// --- APP LOGIC ---
-function switchTab(id, btn) {
-  document.querySelectorAll('.tabpage').forEach(e=>e.classList.remove('active'));
-  el('tab-'+id).classList.add('active');
-  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function syncScenario() {
-  const s = el("inScenario").value;
-  document.querySelectorAll('.refurb-row').forEach(r=>r.style.display = (s==='Refurb-to-Rent'?'table-row':'none'));
-  document.querySelectorAll('.dev-row').forEach(r=>r.style.display = (s==='Refurb-to-Rent'?'none':'table-row'));
-  updateUI();
-}
-
-function downloadCSV() {
-  const clean = (id) => el(id).innerText.replace(/[£,\s]/g,'');
-  const dom = getDOMInputs(); 
-  const res = calculate(dom); 
-  const rows = [
-    ["Property Report"],
-    ["Total GDC", clean("kpiGdc")],
-    ["Required Equity", clean("kpiEq")],
-    ["Profit", clean("kpiProfit")],
-    ["IRR", el("kpiIrr").innerText],
-    [""],
-    ["Purchase Price", dom.purch],
-    ["Loan Amount", dom.loan]
-  ];
-  let csvContent = "\uFEFF" + rows.map(e => e.join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "Property_Data.csv";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-
-function printReport() {
-  document.querySelectorAll("input").forEach(i => i.setAttribute('value', i.value));
-  document.querySelectorAll("select").forEach(s => {
-     s.querySelectorAll("option").forEach(o => {
-        if(o.value === s.value) o.setAttribute('selected', 'selected');
-        else o.removeAttribute('selected');
-     });
-  });
-  window.print();
-}
-
-// INIT
-document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', updateUI));
-syncScenario();
-updateUI();
-</script>
+        // Run once on load
+        calculate();
+    </script>
 </body>
 </html>
