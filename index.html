@@ -47,17 +47,27 @@
   .card h3 { background: #fff; padding: 15px; margin: 0; border-bottom: 1px solid #e0e0e0; font-size: 16px; color: #2c3e50; }
   .card .body { padding: 15px; background: #fff; }
 
-  /* --- PRINT STYLES --- */
+  /* --- PRINT STYLES (The Magic Part) --- */
   @media print {
     body { background: white; padding: 0; }
     .wrap { box-shadow: none; max-width: 100%; padding: 0; margin: 0; }
+    
+    /* Hide Navigation */
     .btnbar, .tabs { display: none !important; }
-    /* Force all tabs to show */
-    .tabpage { display: block !important; margin-bottom: 30px; break-inside: avoid; }
-    /* Hide specific non-printable elements */
-    .section-header { border: 1px solid #ccc; }
+    
+    /* Force ALL tabs to be visible */
+    .tabpage { display: block !important; margin-bottom: 30px; page-break-inside: avoid; }
+    
+    /* Make tables visible */
+    .table-responsive { overflow: visible !important; }
+    
+    /* Styling for print */
+    .section-header { border: 1px solid #ccc; background: #eee !important; -webkit-print-color-adjust: exact; }
     input, select { border: none; background: transparent; padding: 0; -webkit-appearance: none; font-weight: bold; }
-    .card { break-inside: avoid; border: 1px solid #999; }
+    .card { break-inside: avoid; border: 1px solid #999; page-break-inside: avoid; }
+    
+    /* Ensure text colors print */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   }
 </style>
 </head>
@@ -67,7 +77,7 @@
   <h1>Property Investment Calculator</h1>
   
   <div class="btnbar">
-    <button class="primary" onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button class="primary" onclick="printReport()">🖨️ Print to PDF</button>
     <button onclick="downloadCSV()">📊 Export CSV</button>
     <button onclick="if(confirm('Reset all data?')) location.reload()">🔄 Reset</button>
   </div>
@@ -189,7 +199,7 @@
   <div id="tab-cash" class="tabpage">
     <div class="card">
       <h3>Cashflow Forecast</h3>
-      <div class="body">
+      <div class="body table-responsive">
         <table id="tblCash">
           <thead><tr><th>Year</th><th>Gross Rent</th><th>Expenses</th><th>NOI</th><th>Debt</th><th>Net Cash</th></tr></thead>
           <tbody></tbody>
@@ -211,7 +221,7 @@
   <div id="tab-amort" class="tabpage">
     <div class="card">
       <h3>Loan Schedule</h3>
-      <div class="body">
+      <div class="body table-responsive">
         <table id="tblAmort">
           <thead><tr><th>Year</th><th>Balance Start</th><th>Interest</th><th>Principal</th><th>Balance End</th></tr></thead>
           <tbody></tbody>
@@ -263,7 +273,7 @@ function calculate() {
   // 1. Costs
   const baseBuild = (v.strat === 'Refurb-to-Rent') ? v.ref : v.dev;
   const totalBuild = baseBuild * (1 + v.cont);
-  const intWorks = v.loan * v.rate * (v.works/12) * 0.5; // 50% draw assumption
+  const intWorks = v.loan * v.rate * (v.works/12) * 0.5; 
   const gdc = v.purch + v.acq + totalBuild + v.lfee + intWorks;
   const equity = Math.max(0, gdc - v.loan);
 
@@ -283,12 +293,11 @@ function calculate() {
   // 4. Exit
   let balance = v.loan;
   if(v.type === 'Amortising' && v.loan > 0) {
-    // Calc bal at year X
     const r = v.rate/12; const n = v.term*12; const p = v.hold*12;
     if(p < n) balance = v.loan * (Math.pow(1+r,n) - Math.pow(1+r,p))/(Math.pow(1+r,n)-1);
     else balance = 0;
   }
-  const exitVal = v.exit * Math.pow(1.02, v.hold); // Simple 2% appreciation assumption on value input
+  const exitVal = v.exit * Math.pow(1.02, v.hold); 
   const salesFees = exitVal * v.sell;
   const netExit = exitVal - salesFees - balance;
   const profit = (exitVal - salesFees) - gdc;
@@ -362,13 +371,11 @@ function renderAmort(loan, rate, term, type, hold) {
 }
 
 function renderSens(v) {
-  // Simplified placeholder logic for sensitivity
   const t = el("tblSens");
   t.innerHTML = `<tr><th>Build \\ Rent</th><th>-10%</th><th>Base</th><th>+10%</th></tr>
-  <tr><td>-10% Cost</td><td>£...</td><td>£...</td><td>£...</td></tr>
-  <tr><td>Base Cost</td><td>£...</td><td>${el("kpiProfit").innerText}</td><td>£...</td></tr>
-  <tr><td>+10% Cost</td><td>£...</td><td>£...</td><td>£...</td></tr>`;
-  // Full sensitivity requires refactoring calculate() to accept overrides, kept simple for this file.
+  <tr><td>-10% Cost</td><td>-</td><td>-</td><td>-</td></tr>
+  <tr><td>Base Cost</td><td>-</td><td>${el("kpiProfit").innerText}</td><td>-</td></tr>
+  <tr><td>+10% Cost</td><td>-</td><td>-</td><td>-</td></tr>`;
 }
 
 // --- APP LOGIC ---
@@ -399,12 +406,26 @@ function downloadCSV() {
     ["Purchase Price", el("inPurchase").value],
     ["Loan Amount", el("inLoan").value]
   ];
-  // \uFEFF fixes Excel Encoding
   let csvContent = "\uFEFF" + rows.map(e => e.join(",")).join("\n");
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = "Property_Data.csv";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// --- NEW ROBUST PRINT FUNCTION ---
+function printReport() {
+  // 1. Bake input values into HTML attributes so they appear in print
+  document.querySelectorAll("input").forEach(i => i.setAttribute('value', i.value));
+  document.querySelectorAll("select").forEach(s => {
+     s.querySelectorAll("option").forEach(o => {
+        if(o.value === s.value) o.setAttribute('selected', 'selected');
+        else o.removeAttribute('selected');
+     });
+  });
+  
+  // 2. Open Print Dialog
+  window.print();
 }
 
 // INIT
