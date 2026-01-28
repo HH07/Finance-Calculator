@@ -47,27 +47,17 @@
   .card h3 { background: #fff; padding: 15px; margin: 0; border-bottom: 1px solid #e0e0e0; font-size: 16px; color: #2c3e50; }
   .card .body { padding: 15px; background: #fff; }
 
-  /* --- PRINT STYLES (The Magic Part) --- */
+  /* --- PRINT STYLES --- */
   @media print {
     body { background: white; padding: 0; }
     .wrap { box-shadow: none; max-width: 100%; padding: 0; margin: 0; }
-    
-    /* Hide Navigation */
     .btnbar, .tabs { display: none !important; }
-    
-    /* Force ALL tabs to be visible */
-    .tabpage { display: block !important; margin-bottom: 30px; page-break-inside: avoid; }
-    
-    /* Make tables visible */
-    .table-responsive { overflow: visible !important; }
-    
-    /* Styling for print */
-    .section-header { border: 1px solid #ccc; background: #eee !important; -webkit-print-color-adjust: exact; }
+    /* Force all tabs to show */
+    .tabpage { display: block !important; margin-bottom: 30px; break-inside: avoid; }
+    /* Hide specific non-printable elements */
+    .section-header { border: 1px solid #ccc; }
     input, select { border: none; background: transparent; padding: 0; -webkit-appearance: none; font-weight: bold; }
-    .card { break-inside: avoid; border: 1px solid #999; page-break-inside: avoid; }
-    
-    /* Ensure text colors print */
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .card { break-inside: avoid; border: 1px solid #999; }
   }
 </style>
 </head>
@@ -77,7 +67,7 @@
   <h1>Property Investment Calculator</h1>
   
   <div class="btnbar">
-    <button class="primary" onclick="printReport()">🖨️ Print to PDF</button>
+    <button class="primary" onclick="printReport()">🖨️ Print / Save PDF</button>
     <button onclick="downloadCSV()">📊 Export CSV</button>
     <button onclick="if(confirm('Reset all data?')) location.reload()">🔄 Reset</button>
   </div>
@@ -199,7 +189,7 @@
   <div id="tab-cash" class="tabpage">
     <div class="card">
       <h3>Cashflow Forecast</h3>
-      <div class="body table-responsive">
+      <div class="body">
         <table id="tblCash">
           <thead><tr><th>Year</th><th>Gross Rent</th><th>Expenses</th><th>NOI</th><th>Debt</th><th>Net Cash</th></tr></thead>
           <tbody></tbody>
@@ -213,7 +203,7 @@
       <h3>Sensitivity Analysis (NPV)</h3>
       <div class="body">
         <table id="tblSens"></table>
-        <p class="center small">Rows: Build Cost Variance | Cols: Rent Variance</p>
+        <p class="center small">Rows: Build Cost Variance (-10% / +10%) | Cols: Rent Variance (-10% / +10%)</p>
       </div>
     </div>
   </div>
@@ -221,7 +211,7 @@
   <div id="tab-amort" class="tabpage">
     <div class="card">
       <h3>Loan Schedule</h3>
-      <div class="body table-responsive">
+      <div class="body">
         <table id="tblAmort">
           <thead><tr><th>Year</th><th>Balance Start</th><th>Interest</th><th>Principal</th><th>Balance End</th></tr></thead>
           <tbody></tbody>
@@ -251,24 +241,29 @@ function irr(values) {
     let nr=r-n/d; if(Math.abs(nr-r)<1e-6) return nr; r=nr;
   } return NaN;
 }
+function npv(rate, values) {
+  return values.reduce((acc, curr, i) => acc + curr / Math.pow(1 + rate, i), 0);
+}
 
 // --- CALCULATION ---
-function calculate() {
-  // Inputs
-  const v = {
-    strat: el("inScenario").value, units: val("inUnits"),
-    purch: val("inPurchase"), acq: val("inStamp")+val("inLegal")+val("inAgent")+val("inOtherAcq"),
-    // Build
-    ref: val("inRefMat")+val("inRefLab")+val("inRefPro")+val("inRefOther"),
-    dev: val("inDevSite")+val("inDevBuild")+val("inDevPro")+val("inDevOther"),
-    cont: val("inCont")/100,
-    // Fin
-    loan: val("inLoan"), rate: val("inRate")/100, term: val("inTerm"), type: el("inType").value, lfee: val("inLfee"), works: val("inWorks"),
-    // Ops
-    rent: val("inRent"), growth: val("inGrowth")/100, opex: val("inOpexPct")/100, hold: val("inHold"),
-    // Exit
-    exit: val("inExitVal"), sell: val("inSell")/100
-  };
+function calculate(inputOverrides = null) {
+  // If overrides are provided (for sensitivity), use them. Otherwise read DOM.
+  let v;
+  if(inputOverrides) {
+    v = inputOverrides;
+  } else {
+    // Read DOM Inputs
+    v = {
+      strat: el("inScenario").value, units: val("inUnits"),
+      purch: val("inPurchase"), acq: val("inStamp")+val("inLegal")+val("inAgent")+val("inOtherAcq"),
+      ref: val("inRefMat")+val("inRefLab")+val("inRefPro")+val("inRefOther"),
+      dev: val("inDevSite")+val("inDevBuild")+val("inDevPro")+val("inDevOther"),
+      cont: val("inCont")/100,
+      loan: val("inLoan"), rate: val("inRate")/100, term: val("inTerm"), type: el("inType").value, lfee: val("inLfee"), works: val("inWorks"),
+      rent: val("inRent"), growth: val("inGrowth")/100, opex: val("inOpexPct")/100, hold: val("inHold"),
+      exit: val("inExitVal"), sell: val("inSell")/100, discount: 0.08 // Default discount rate for NPV
+    };
+  }
 
   // 1. Costs
   const baseBuild = (v.strat === 'Refurb-to-Rent') ? v.ref : v.dev;
@@ -303,10 +298,8 @@ function calculate() {
   const profit = (exitVal - salesFees) - gdc;
 
   // 5. Cashflows
-  const flows = [-equity];
-  const tb = el("tblCash").querySelector("tbody");
-  tb.innerHTML = "";
-  
+  const cashflows = [-equity];
+  const tableRows = [];
   for(let y=1; y<=v.hold; y++) {
     const factor = Math.pow(1+v.growth, y-1);
     const r_gross = grossRent * factor;
@@ -316,42 +309,100 @@ function calculate() {
     
     // IRR flow
     if(y===v.hold) flows.push(r_net + netExit);
-    else flows.push(r_net);
+    else flows.push(r_net); // NPV/IRR logic usually adds net rent AND exit proceeds in final year
 
-    tb.innerHTML += `<tr><td>${y}</td><td>${fmtGBP(r_gross)}</td><td>${fmtGBP(r_exp)}</td><td>${fmtGBP(r_noi)}</td><td>${fmtGBP(debtSvc)}</td><td><b>${fmtGBP(r_net)}</b></td></tr>`;
+    // For table display
+    tableRows.push({ y, rev:r_gross, exp:r_exp, n:r_noi, d:debtSvc, net:r_net });
   }
+  // Add exit to last year logic for 'flows' array used for IRR/NPV
+  // Note: The loop pushed (r_net + netExit) correctly.
 
-  // --- RENDER UI ---
-  el("kpiScenario").innerText = v.strat;
-  el("kpiUnits").innerText = v.units;
-  el("kpiHold").innerText = v.hold;
-  el("kpiGdc").innerText = fmtGBP(gdc);
-  el("kpiEq").innerText = fmtGBP(equity);
-  el("kpiProfit").innerText = fmtGBP(profit);
-  el("kpiCf1").innerText = fmtGBP(cf1);
-  el("kpiGY").innerText = fmtPct(grossRent/gdc);
-  el("kpiNY").innerText = fmtPct(noi/gdc);
-  const irrVal = irr(flows);
-  el("kpiIrr").innerText = isNaN(irrVal) ? "-" : fmtPct(irrVal);
-
-  el("oAcq").innerText = fmtGBP(v.purch + v.acq);
-  el("oBuild").innerText = fmtGBP(totalBuild);
-  el("oFin").innerText = fmtGBP(v.lfee + intWorks);
-  el("oGdc").innerText = fmtGBP(gdc);
-  el("oLoan").innerText = fmtGBP(v.loan);
-  el("oEq").innerText = fmtGBP(equity);
-
-  el("oSale").innerText = fmtGBP(exitVal);
-  el("oScost").innerText = fmtGBP(salesFees);
-  el("oBal").innerText = fmtGBP(balance);
-  el("oNet").innerText = fmtGBP(netExit);
-  el("oProf").innerText = fmtGBP(profit);
-
-  renderAmort(v.loan, v.rate, v.term, v.type, v.hold);
-  renderSens(v);
+  return { v, build: totalBuild, cont: baseBuild*v.cont, acq: v.purch+v.acq, intWorks, gdc, reqEq: equity, grossRent, egi: grossRent, opex: expense, noi, debtSvc, cf1, exitVal, salesCosts: salesFees, balance, netEquityExit: netExit, profit, cashflows, tableRows };
 }
 
-// --- SUB RENDERS ---
+// --- UI UPDATER ---
+function updateUI() {
+  // Run Main Calculation from DOM
+  const res = calculate();
+  const v = res.v;
+  
+  // Helper to set text
+  const set = (id, val) => { const e = el(id); if(e) e.textContent = val; };
+
+  // KPIs
+  set("kpiScenario", v.strat); set("kpiUnits", v.units); set("kpiHold", v.hold);
+  set("kpiGdc", fmtGBP(res.gdc)); set("kpiEq", fmtGBP(res.reqEq));
+  set("kpiProfit", fmtGBP(res.profit));
+  set("kpiCf1", fmtGBP(res.cf1));
+  set("kpiGY", fmtPct(res.grossRent/res.gdc)); set("kpiNY", fmtPct(res.noi/res.gdc));
+  
+  const irrVal = irr(res.cashflows); const npvVal = npv(v.discount, res.cashflows);
+  set("kpiIrr", isNaN(irrVal) ? "-" : fmtPct(irrVal));
+
+  // Outputs Tab
+  set("oAcq", fmtGBP(v.purch + v.acq));
+  set("oBuild", fmtGBP(res.build));
+  set("oFin", fmtGBP(v.lfee + res.intWorks));
+  set("oGdc", fmtGBP(res.gdc)); set("oLoan", fmtGBP(v.loan)); set("oEq", fmtGBP(res.reqEq));
+
+  set("oSale", fmtGBP(res.exitVal));
+  set("oScost", fmtGBP(res.salesCosts)); set("oBal", fmtGBP(res.balance));
+  set("oNet", fmtGBP(res.netEquityExit)); set("oProf", fmtGBP(res.profit));
+
+  // Tables
+  renderCashflowTable(res.tableRows);
+  renderSens(v); // Run Sensitivity Matrix
+  renderAmort(v.loan, v.rate, v.term, v.type, v.hold);
+}
+
+function renderCashflowTable(rows) {
+  const tbody = el("tblCash").querySelector("tbody");
+  tbody.innerHTML = "";
+  rows.forEach(row => {
+    tbody.innerHTML += `<tr><td>${row.y}</td><td>${fmtGBP(row.rev)}</td><td>${fmtGBP(row.exp)}</td><td>${fmtGBP(row.n)}</td><td>${fmtGBP(row.d)}</td><td><b>${fmtGBP(row.net)}</b></td></tr>`;
+  });
+}
+
+function renderSens(baseV) {
+  const tb = el("tblSens");
+  // Header
+  let html = "<thead><tr><th style='background:#f0f0f0'>Build Cost \\ Rent</th><th class='center'>-10%</th><th class='center'>Base</th><th class='center'>+10%</th></tr></thead><tbody>";
+
+  const costVars = [0.9, 1.0, 1.1]; // Build Cost Modifiers
+  const rentVars = [0.9, 1.0, 1.1]; // Rent Modifiers
+  const labels = ["-10% Cost", "Base Cost", "+10% Cost"];
+
+  costVars.forEach((cMult, i) => {
+    html += `<tr><td style='font-weight:bold;background:#f9f9f9'>${labels[i]}</td>`;
+
+    rentVars.forEach((rMult, j) => {
+       // 1. Clone Inputs
+       let input = Object.assign({}, baseV);
+
+       // 2. Apply Modifiers
+       input.rent = baseV.rent * rMult;
+       input.ref = baseV.ref * cMult; 
+       input.dev = baseV.dev * cMult;
+
+       // 3. Recalculate
+       const res = calculate(input);
+
+       // 4. Get NPV
+       const val = npv(input.discount, res.cashflows);
+
+       // 5. Highlight Base Case
+       const isBase = (i===1 && j===1);
+       const cellStyle = isBase ? "background:#e8f5e9;font-weight:bold;border:2px solid #a5d6a7" : "";
+       
+       html += `<td class="right" style="${cellStyle}">${fmtGBP(val)}</td>`;
+    });
+    html += "</tr>";
+  });
+
+  html += "</tbody>";
+  tb.innerHTML = html;
+}
+
 function renderAmort(loan, rate, term, type, hold) {
   const tb = el("tblAmort").querySelector("tbody"); tb.innerHTML = "";
   if(loan <= 0) return;
@@ -370,14 +421,6 @@ function renderAmort(loan, rate, term, type, hold) {
   }
 }
 
-function renderSens(v) {
-  const t = el("tblSens");
-  t.innerHTML = `<tr><th>Build \\ Rent</th><th>-10%</th><th>Base</th><th>+10%</th></tr>
-  <tr><td>-10% Cost</td><td>-</td><td>-</td><td>-</td></tr>
-  <tr><td>Base Cost</td><td>-</td><td>${el("kpiProfit").innerText}</td><td>-</td></tr>
-  <tr><td>+10% Cost</td><td>-</td><td>-</td><td>-</td></tr>`;
-}
-
 // --- APP LOGIC ---
 function switchTab(id, btn) {
   document.querySelectorAll('.tabpage').forEach(e=>e.classList.remove('active'));
@@ -390,7 +433,7 @@ function syncScenario() {
   const s = el("inScenario").value;
   document.querySelectorAll('.refurb-row').forEach(r=>r.style.display = (s==='Refurb-to-Rent'?'table-row':'none'));
   document.querySelectorAll('.dev-row').forEach(r=>r.style.display = (s==='Refurb-to-Rent'?'none':'table-row'));
-  calculate();
+  updateUI();
 }
 
 // --- CLEAN EXPORTS ---
@@ -413,9 +456,9 @@ function downloadCSV() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// --- NEW ROBUST PRINT FUNCTION ---
+// --- ROBUST PRINT FUNCTION ---
 function printReport() {
-  // 1. Bake input values into HTML attributes so they appear in print
+  // Bake inputs
   document.querySelectorAll("input").forEach(i => i.setAttribute('value', i.value));
   document.querySelectorAll("select").forEach(s => {
      s.querySelectorAll("option").forEach(o => {
@@ -423,15 +466,13 @@ function printReport() {
         else o.removeAttribute('selected');
      });
   });
-  
-  // 2. Open Print Dialog
   window.print();
 }
 
 // INIT
-document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', calculate));
+document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', updateUI));
 syncScenario();
-calculate();
+updateUI();
 </script>
 </body>
 </html>
