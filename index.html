@@ -54,7 +54,7 @@
   <h1>Property Investment Calculator</h1>
   
   <div class="btnbar">
-    <button class="primary" onclick="if(confirm('Reset all data to defaults?')) location.reload()">🔄 Reset Calculator</button>
+    <button class="primary" onclick="if(confirm('Reset all data?')) location.reload()">🔄 Reset</button>
   </div>
 
   <div class="tabs">
@@ -116,6 +116,7 @@
       <tr class="dev-row" style="display:none"><td>Construction (£)</td><td><input type="number" id="inDevBuild" value="0"></td></tr>
       <tr class="dev-row" style="display:none"><td>Pro Fees (£)</td><td><input type="number" id="inDevPro" value="0"></td></tr>
       <tr class="dev-row" style="display:none"><td>Other Dev (£)</td><td><input type="number" id="inDevOther" value="0"></td></tr>
+      
       <tr><td>Contingency (%)</td><td><input type="number" id="inCont" value="10"></td></tr>
     </table>
 
@@ -217,14 +218,12 @@ function pmt(rate, nper, pv) {
   const pvif = Math.pow(1+rate, nper);
   return -(rate*pv*pvif)/(pvif-1);
 }
-
 function irr(values) {
   let r=0.1; for(let i=0;i<100;i++){ let n=0,d=0;
     for(let j=0;j<values.length;j++){ n+=values[j]/Math.pow(1+r,j); d-=j*values[j]/Math.pow(1+r,j+1); }
     let nr=r-n/d; if(Math.abs(nr-r)<1e-6) return nr; r=nr;
   } return NaN;
 }
-
 function npv(rate, values) {
   return values.reduce((acc, curr, i) => acc + curr / Math.pow(1 + rate, i), 0);
 }
