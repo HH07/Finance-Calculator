@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EAS Finance | Bridge-to-Let Analyser</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   /* --- CORE STYLES --- */
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
@@ -44,6 +45,9 @@
   .right { text-align: right; }
   .center { text-align: center; }
   
+  /* Chart Containers */
+  .chart-container { position: relative; height: 250px; width: 100%; }
+
   .kpiGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
   @media(max-width:768px) { .kpiGrid { grid-template-columns: 1fr; } }
   .card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fff; }
@@ -82,6 +86,27 @@
     <div class="kpiGrid">
       
       <div class="card">
+        <h3>Borrowing Power (5-Year vs 2-Year)</h3>
+        <div class="body">
+          <div class="chart-container">
+            <canvas id="chartLeverage"></canvas>
+          </div>
+          <p class="center" style="font-size:13px; margin-top:10px;">
+            5-Year Term unlocks <span id="kpiExtraLev" class="highlight-green">£0</span> extra capital
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Project Cost Breakdown</h3>
+        <div class="body">
+          <div class="chart-container">
+            <canvas id="chartCosts"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>Deal Viability</h3>
         <div class="body">
           <table style="margin:0">
@@ -95,7 +120,7 @@
       </div>
 
       <div class="card">
-        <h3>Refinance Optimiser</h3>
+        <h3>Refinance Stress Test</h3>
         <div class="body">
           <table style="margin:0">
             <thead>
@@ -111,11 +136,6 @@
                 <td style="font-weight:bold; color:#27ae60">Typical 5-Year Stress</td>
                 <td class="right" id="kpiStress5yr">-</td>
                 <td class="right highlight-green" id="kpiLoan5yr">-</td>
-              </tr>
-              <tr>
-                <td colspan="3" class="center" style="padding-top:10px; font-size:13px;">
-                  5-Year term could release an extra <span id="kpiExtraLev" class="highlight-green">£0</span>
-                </td>
               </tr>
             </tbody>
           </table>
@@ -276,8 +296,72 @@ const el = (id) => document.getElementById(id);
 const val = (id) => parseFloat(el(id)?.value) || 0;
 const fmtGBP = (n) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
 const fmtPct = (n) => (n).toFixed(2) + "%";
-const clamp = (n, min, max) => Math.min(Math.max(n, min), max); // Prevents Infinity errors
- 
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max); 
+
+/* ----------------- Chart Instances ----------------- */
+let chartLev = null;
+let chartCosts = null;
+
+function initCharts() {
+  // Chart 1: Leverage
+  const ctxLev = document.getElementById('chartLeverage').getContext('2d');
+  chartLev = new Chart(ctxLev, {
+    type: 'bar',
+    data: {
+      labels: ['2-Year (High Stress)', '5-Year (Low Stress)'],
+      datasets: [{
+        label: 'Max Borrowing Capacity (£)',
+        data: [0, 0],
+        backgroundColor: ['#95a5a6', '#27ae60'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Chart 2: Costs
+  const ctxCosts = document.getElementById('chartCosts').getContext('2d');
+  chartCosts = new Chart(ctxCosts, {
+    type: 'doughnut',
+    data: {
+      labels: ['Purchase', 'Works', 'Finance', 'Fees'],
+      datasets: [{
+        data: [0, 0, 0, 0],
+        backgroundColor: ['#2c3e50', '#e67e22', '#c0392b', '#7f8c8d'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'right' } }
+    }
+  });
+}
+
+function updateCharts(res) {
+    if(!chartLev || !chartCosts) return;
+
+    // Update Leverage Chart
+    chartLev.data.datasets[0].data = [res.maxLoanStd, res.maxLoan5yr];
+    chartLev.update();
+
+    // Update Costs Chart
+    const v = res.v;
+    chartCosts.data.datasets[0].data = [
+        v.purch, 
+        v.refurb, 
+        res.totalFinanceCost, 
+        v.acqFees
+    ];
+    chartCosts.update();
+}
+
 /* ----------------- Reset ----------------- */
 let resetArmed = false;
 let resetTimer = null;
@@ -291,7 +375,6 @@ function setResetButtonLabel() {
 function resetToZeroImmediate() {
  document.querySelectorAll('input[type="number"]').forEach(input => {
      const id = input.id || "";
-     // Smart Reset: Don't zero out the Rates/Percentages, only the money fields.
      if(id.startsWith("inStress") || id.startsWith("inRefiLtv") || id.startsWith("inOpex") || id.startsWith("inCont") || id.startsWith("inBridgeRate")) {
          return; 
      }
@@ -315,45 +398,37 @@ function handleResetClick() {
   resetToZeroImmediate();
 }
 
-/* ----------------- Email Summary Handler ----------------- */
+/* ----------------- Email Handler ----------------- */
 function handleEmailSummary() {
     const res = calculate();
     const v = res.v;
+    const recipient = "service@easfinance.co.uk";
     
-    // Generic subject and body suitable for "Send to Self" or "Send to Broker"
-    const subject = `Property Deal Analysis: ${fmtGBP(v.purch)} Purchase`;
-    const body = `Here is the summary of the property deal analysis:
+    const subject = `Deal Enquiry: ${fmtGBP(v.purch)} Purchase`;
+    const body = `Hi EAS Finance,
+
+I have run the following numbers on your calculator and would like to discuss this deal:
 
 --- PURCHASE ---
 Purchase Price: ${fmtGBP(v.purch)}
 Works Cost: ${fmtGBP(v.refurb)}
 Target GDV: ${fmtGBP(v.gdv)}
 
---- BRIDGING FINANCE ---
+--- BRIDGING REQ ---
 Gross Loan: ${fmtGBP(v.bGross)}
-Interest Rate: ${v.bRate}% pm
 Term: ${v.bTerm} months
-Retained Interest: ${fmtGBP(res.bridgeInterest)}
 
---- FINANCIAL OUTCOME ---
-Total GDC: ${fmtGBP(res.gdc)}
-Refinance Loan: ${fmtGBP(res.maxLoan5yr)}
+--- EXIT PREDICTION ---
+Projected Value Uplift: ${fmtGBP(res.profit)}
 Money Left In: ${fmtGBP(res.moneyLeftIn)}
-Projected Uplift: ${fmtGBP(res.profit)}
 
---- RENTAL METRICS ---
-Gross Rent: ${fmtGBP(v.rent * 12)} /yr
-Net Yield: ${fmtPct(res.netYield * 100)}
+Please let me know if you can assist with funding this project.`;
 
-Generated by EAS Finance Calculator.`;
-
-    // No recipient pre-filled, so user can type their own email or broker's
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
  
 /* ----------------- Finance Engine ----------------- */
 function calculate(overrideV = null) {
-  // If no overrides, grab inputs from UI
   let v;
   if (overrideV) {
       v = overrideV;
@@ -380,7 +455,6 @@ function calculate(overrideV = null) {
       };
   }
 
-  // Bridging Calcs
   const bridgeInterest = v.bGross * (v.bRate/100) * v.bTerm; 
   const bridgeArrFee = v.bGross * (v.bArr/100);
   const bridgeExitFee = v.bGross * (v.bExit/100);
@@ -388,7 +462,6 @@ function calculate(overrideV = null) {
   const totalFinanceCost = bridgeInterest + bridgeArrFee + bridgeExitFee;
   const gdc = v.purch + v.acqFees + v.refurb + totalFinanceCost;
 
-  // Refinance Calcs
   const annualRent = v.rent * 12;
   const maxLoanIcrStd = annualRent / (v.icr * v.stressStd);
   const maxLoanLtv = v.gdv * v.ltvCap;
@@ -461,31 +534,25 @@ function updateUI() {
   
   renderCashflowTable(v.rent * 12, v.opex, res.maxLoan5yr, v.mortRate);
   updateRiskAnalysis(v);
+  updateCharts(res);
 }
 
-/* ----------------- New Contingency/Stress Logic ----------------- */
 function updateRiskAnalysis(baseV) {
-    // 1. Base Case
     const base = calculate(baseV);
     el("riskBaseMoney").textContent = fmtGBP(base.moneyLeftIn);
     el("riskBaseProf").textContent = fmtGBP(base.profit);
     el("riskBaseRoi").textContent = (base.moneyLeftIn <= 0) ? "Inf%" : fmtPct(base.roi * 100);
 
-    // 2. Cost Overrun (+10% on refurb)
-    // We clone the Base inputs and modify refurb
     const costV = Object.assign({}, baseV);
     costV.refurb = baseV.refurb * 1.10; 
     const costRes = calculate(costV);
-    
     el("riskCostMoney").textContent = fmtGBP(costRes.moneyLeftIn);
     el("riskCostProf").textContent = fmtGBP(costRes.profit);
     el("riskCostRoi").textContent = (costRes.moneyLeftIn <= 0) ? "Inf%" : fmtPct(costRes.roi * 100);
 
-    // 3. Market Dip (-10% on GDV)
     const valV = Object.assign({}, baseV);
     valV.gdv = baseV.gdv * 0.90;
     const valRes = calculate(valV);
-    
     el("riskValMoney").textContent = fmtGBP(valRes.moneyLeftIn);
     el("riskValProf").textContent = fmtGBP(valRes.profit);
     el("riskValRoi").textContent = (valRes.moneyLeftIn <= 0) ? "Inf%" : fmtPct(valRes.roi * 100);
@@ -527,6 +594,11 @@ function wireEvents() {
         el('tab-' + btn.dataset.tab).classList.add('active');
         document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        // Fix: Charts sometimes need a resize trigger when tab becomes visible
+        if(btn.dataset.tab === 'dash' && chartLev) {
+            chartLev.resize();
+            chartCosts.resize();
+        }
     });
   });
   
@@ -535,6 +607,7 @@ function wireEvents() {
     i.addEventListener('change', updateUI);
   });
   
+  initCharts();
   updateUI();
 }
 
