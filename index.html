@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EAS Finance | Bridge-to-Let Analyser</title>
 <style>
-  /* --- EAS BRANDING & CORE STYLES --- */
+  /* --- CORE STYLES --- */
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
   .wrap { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
   h1 { margin-top: 0; color: #0d2e48; border-bottom: 2px solid #eee; padding-bottom: 15px; text-align: center; }
@@ -16,6 +16,8 @@
   button:hover { background: #f0f0f0; }
   button.primary { background: #0d2e48; color: white; border-color: #0d2e48; }
   button.primary:hover { background: #1a4a70; }
+  button.action { background: #27ae60; color: white; border-color: #27ae60; }
+  button.action:hover { background: #219150; }
   
   /* Tabs */
   .tabs { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; gap: 5px; overflow-x: auto; }
@@ -34,6 +36,9 @@
   input, select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
   input:focus { border-color: #0d2e48; outline: none; }
   
+  /* Tooltips (The dashed underline look) */
+  .help { cursor: help; border-bottom: 1px dashed #999; text-decoration: none; color: inherit; }
+
   /* Outputs */
   .cellOutput { font-family: 'Consolas', monospace; font-weight: 700; text-align: right; color: #0d2e48; }
   .right { text-align: right; }
@@ -44,11 +49,11 @@
   .card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fff; }
   .card h3 { background: #fff; padding: 15px; margin: 0; border-bottom: 1px solid #e0e0e0; font-size: 16px; color: #0d2e48; }
   .card .body { padding: 15px; }
-
-  /* New Logic Highlight Classes */
+  
   .highlight-green { color: #27ae60; font-weight: bold; }
   .highlight-red { color: #c0392b; font-weight: bold; }
   .note { font-size: 12px; color: #666; display: block; margin-top: 4px; font-style: italic; }
+  .disclaimer { font-size: 11px; color: #888; text-align: center; margin-top: 15px; font-style: italic; background:#f9f9f9; padding:8px; border-radius:4px; }
 </style>
 </head>
 <body>
@@ -58,6 +63,7 @@
  
   <div class="btnbar">
     <button class="primary" id="btnResetZero" type="button">Reset Inputs</button>
+    <button class="action" id="btnEmailQuote" type="button">📧 Email Me This Quote</button>
   </div>
  
   <div class="tabs">
@@ -68,15 +74,20 @@
   </div>
  
   <div id="tab-dash" class="tabpage active">
+    
+    <div class="disclaimer" style="margin-bottom: 20px; text-align:left; border-left: 3px solid #ccc;">
+      <b>Assumptions:</b> Bridge interest is retained; Refinance is interest-only; Rental growth fixed at 3% p.a. for projections. Lender criteria vary.
+    </div>
+
     <div class="kpiGrid">
       
       <div class="card">
         <h3>Deal Viability</h3>
         <div class="body">
           <table style="margin:0">
-            <tr><td>Total Project Cost (GDC)</td><td class="cellOutput" id="kpiGdc">-</td></tr>
+            <tr><td><span class="help" title="Total Project Cost (Purchase + Works + Fees + Finance)">Total GDC</span></td><td class="cellOutput" id="kpiGdc">-</td></tr>
             <tr><td><b>Money Left In Deal</b></td><td class="cellOutput highlight-red" id="kpiMoneyLeftIn">-</td></tr>
-            <tr><td>Value Uplift (Paper)</td><td class="cellOutput highlight-green" id="kpiProfit">-</td></tr>
+            <tr><td><span class="help" title="Paper profit: End Value (GDV) minus Total Cost (GDC)">Value Uplift (Paper)</span></td><td class="cellOutput highlight-green" id="kpiProfit">-</td></tr>
             <tr><td>ROI (on Cash Left In)</td><td class="cellOutput" id="kpiRoi">-</td></tr>
             <tr><td>Yield (Net)</td><td class="cellOutput" id="kpiYield">-</td></tr>
           </table>
@@ -84,26 +95,26 @@
       </div>
 
       <div class="card">
-        <h3>Refinance Optimiser (5yr vs 2yr)</h3>
+        <h3>Refinance Optimiser</h3>
         <div class="body">
           <table style="margin:0">
             <thead>
-              <tr style="font-size:12px; color:#666"><th>Product</th><th class="right">Stress Rate</th><th class="right">Max Loan</th></tr>
+              <tr style="font-size:12px; color:#666"><th>Test Type</th><th class="right">Stress Rate</th><th class="right">Max Loan</th></tr>
             </thead>
             <tbody>
               <tr>
-                <td>Standard (2 Year)</td>
+                <td>Typical 2-Year Stress</td>
                 <td class="right" id="kpiStressStd">-</td>
                 <td class="right" id="kpiLoan2yr">-</td>
               </tr>
               <tr style="background:#e8f5e9">
-                <td style="font-weight:bold; color:#27ae60">5-Year Fixed</td>
+                <td style="font-weight:bold; color:#27ae60">Typical 5-Year Stress</td>
                 <td class="right" id="kpiStress5yr">-</td>
                 <td class="right highlight-green" id="kpiLoan5yr">-</td>
               </tr>
               <tr>
                 <td colspan="3" class="center" style="padding-top:10px; font-size:13px;">
-                  Choosing 5-Year Fixed releases an extra <span id="kpiExtraLev" class="highlight-green">£0</span>
+                  5-Year term could release an extra <span id="kpiExtraLev" class="highlight-green">£0</span>
                 </td>
               </tr>
             </tbody>
@@ -130,7 +141,7 @@
           <tr><td>Refurb/Build Cost (£)</td><td><input type="number" id="inRefurb" value="35000" min="0" step="500"></td></tr>
           <tr><td>Contingency (%)</td><td><input type="number" id="inCont" value="10" min="0" step="1"></td></tr>
           <tr><td>Works Duration (Months)</td><td><input type="number" id="inWorksTerm" value="6" min="1" step="1"></td></tr>
-          <tr><td><b>Target GDV (End Value)</b></td><td><input type="number" id="inGdv" value="400000" min="0" step="1000" style="font-weight:bold; border-color:#27ae60"></td></tr>
+          <tr><td><b><span class="help" title="Gross Development Value (End Value)">Target GDV</span></b></td><td><input type="number" id="inGdv" value="400000" min="0" step="1000" style="font-weight:bold; border-color:#27ae60"></td></tr>
         </table>
       </div>
 
@@ -147,10 +158,10 @@
         <div class="section-header">3b. Refinance (Exit)</div>
         <table>
            <tr><td>Projected Rent (pcm)</td><td><input type="number" id="inRent" value="2000" min="0" step="50"></td></tr>
-           <tr><td>OpEx/Voids (%)</td><td><input type="number" id="inOpex" value="15" min="0" step="1"></td></tr>
-           <tr><td>Max LTV Cap (%)</td><td><input type="number" id="inRefiLtv" value="75" min="0" max="100" step="5"></td></tr>
+           <tr><td><span class="help" title="Operating Expenses (Management, Void, Maintenance)">OpEx/Voids (%)</span></td><td><input type="number" id="inOpex" value="15" min="0" step="1"></td></tr>
+           <tr><td><span class="help" title="Maximum Loan to Value based on Valuation">Max LTV Cap (%)</span></td><td><input type="number" id="inRefiLtv" value="75" min="0" max="100" step="5"></td></tr>
            <tr>
-             <td>ICR Test</td>
+             <td><span class="help" title="Interest Coverage Ratio (Rent vs Interest)">ICR Test</span></td>
              <td>
                <select id="inIcrType">
                  <option value="1.45">Individual/HMO (145%)</option>
@@ -159,11 +170,11 @@
              </td>
            </tr>
            <tr>
-             <td>Stress Rate (Standard)</td>
+             <td>Stress Rate (2-Yr)</td>
              <td><input type="number" id="inStressStd" value="7.5" step="0.1" min="0.1"><span class="note">Typ: 5.5% or PayRate+2%</span></td>
            </tr>
            <tr>
-             <td>Stress Rate (5-Yr Fixed)</td>
+             <td>Stress Rate (5-Yr)</td>
              <td><input type="number" id="inStress5Yr" value="5.5" step="0.1" min="0.1"><span class="note">Typ: Pay Rate (e.g. 5.5%)</span></td>
            </tr>
            <tr><td>Mortgage Interest Rate (%)</td><td><input type="number" id="inMortRate" value="5.5" step="0.1" min="0"></td></tr>
@@ -184,7 +195,7 @@
             <tr><td>Refurbishment (inc Cont)</td><td class="right" id="outRefurb">-</td></tr>
             <tr><td>Bridging Interest (Retained)</td><td class="right" id="outBridgeInt">-</td></tr>
             <tr><td>Bridging Fees (Arr + Exit)</td><td class="right" id="outBridgeFees">-</td></tr>
-            <tr style="background:#eef2f5;font-weight:bold"><td>Total Project Cost (GDC)</td><td class="right" id="outGdc">-</td></tr>
+            <tr style="background:#eef2f5;font-weight:bold"><td>Total GDC (Cost)</td><td class="right" id="outGdc">-</td></tr>
           </table>
         </div>
       </div>
@@ -244,13 +255,11 @@ function resetToZeroImmediate() {
  document.querySelectorAll('input[type="number"]').forEach(input => {
      const id = input.id || "";
      // Smart Reset: Don't zero out the Rates/Percentages, only the money fields.
-     // This prevents the calculator from looking broken with 0% interest rates.
      if(id.startsWith("inStress") || id.startsWith("inRefiLtv") || id.startsWith("inOpex") || id.startsWith("inCont") || id.startsWith("inBridgeRate")) {
          return; 
      }
      input.value = 0; 
  });
- // Reset Selects
  document.querySelectorAll('select').forEach(select => { select.selectedIndex = 0; });
  updateUI();
 }
@@ -268,81 +277,89 @@ function handleResetClick() {
   setResetButtonLabel();
   resetToZeroImmediate();
 }
+
+/* ----------------- Email Quote Handler ----------------- */
+function handleEmailQuote() {
+    const res = calculate();
+    const v = res.v;
+    
+    const subject = `Deal Quote: ${fmtGBP(v.purch)} Purchase`;
+    const body = `Hi EAS Finance,
+
+I'd like to discuss this potential deal:
+
+--- PURCHASE ---
+Purchase Price: ${fmtGBP(v.purch)}
+Works Cost: ${fmtGBP(v.refurb)}
+Target GDV: ${fmtGBP(v.gdv)}
+
+--- BRIDGING REQ ---
+Gross Loan: ${fmtGBP(v.bGross)}
+Term: ${v.bTerm} months
+
+--- EXIT STRATEGY ---
+Rent: ${fmtGBP(v.rent * 12)} /yr
+Money Left In: ${fmtGBP(res.moneyLeftIn)}
+Projected Uplift: ${fmtGBP(res.profit)}
+
+Please let me know if this is viable.`;
+
+    window.location.href = `mailto:info@easfinance.co.uk?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
  
 /* ----------------- Finance Engine ----------------- */
 function calculate() {
-  // 1. Inputs
   const v = {
-    purch: val("inPurchase"),
-    acqFees: val("inStamp") + val("inFeesAcq"),
-    refurb: val("inRefurb") * (1 + val("inCont")/100),
-    gdv: val("inGdv"),
+    // Tweak 3: Clamp negatives to 0 to prevent bad math
+    purch: Math.max(0, val("inPurchase")),
+    acqFees: Math.max(0, val("inStamp") + val("inFeesAcq")),
+    refurb: Math.max(0, val("inRefurb")) * (1 + val("inCont")/100),
+    gdv: Math.max(0, val("inGdv")),
     
-    // Bridge
-    bGross: val("inBridgeGross"),
+    bGross: Math.max(0, val("inBridgeGross")),
     bRate: val("inBridgeRate"),
     bTerm: val("inBridgeTerm"),
     bArr: val("inBridgeArr"),
     bExit: val("inBridgeExit"),
     
-    // Refi
-    rent: val("inRent"),
+    rent: Math.max(0, val("inRent")),
     opex: val("inOpex") / 100,
     ltvCap: val("inRefiLtv") / 100,
     icr: parseFloat(el("inIcrType").value),
-    // Clamp stress rates to minimum 0.1% to avoid divide-by-zero infinity
+    // Tweak 3: Clamp stress rates to safe floor (0.001)
     stressStd: clamp(val("inStressStd") / 100, 0.001, 10),
     stress5yr: clamp(val("inStress5Yr") / 100, 0.001, 10),
     mortRate: val("inMortRate") / 100
   };
 
-  // 2. Bridging Calcs (The "Entry")
-  const bridgeInterest = v.bGross * (v.bRate/100) * v.bTerm; // Retained Interest
+  // Bridging Calcs
+  const bridgeInterest = v.bGross * (v.bRate/100) * v.bTerm; 
   const bridgeArrFee = v.bGross * (v.bArr/100);
   const bridgeExitFee = v.bGross * (v.bExit/100);
-  
-  // Net Loan = Gross - Retained Interest - Arrangement Fee
   const bridgeNet = v.bGross - bridgeInterest - bridgeArrFee;
-  
-  // Total Cost (GDC) = Purchase + Costs + Works + Finance Costs
   const totalFinanceCost = bridgeInterest + bridgeArrFee + bridgeExitFee;
   const gdc = v.purch + v.acqFees + v.refurb + totalFinanceCost;
 
-  // 3. Refinance Calcs (The "Exit")
+  // Refinance Calcs
   const annualRent = v.rent * 12;
-  
-  // Stress Test A: Standard (2-Year)
-  // Max Loan = Rent / (ICR * StressRate)
   const maxLoanIcrStd = annualRent / (v.icr * v.stressStd);
   const maxLoanLtv = v.gdv * v.ltvCap;
   const finalLoanStd = Math.min(maxLoanIcrStd, maxLoanLtv);
 
-  // Stress Test B: 5-Year Fixed (Optimised)
   const maxLoanIcr5yr = annualRent / (v.icr * v.stress5yr);
   const finalLoan5yr = Math.min(maxLoanIcr5yr, maxLoanLtv);
 
-  // 4. Viability (Money Left In)
-  // We assume the user takes the optimal 5-year loan
   const mortgageAmount = finalLoan5yr;
-  
-  // Redemption cost = Gross Bridge Loan (Principal) + Exit Fee 
-  // (Assumes interest was retained/pre-paid)
   const bridgeRedemption = v.bGross + bridgeExitFee; 
-  
-  // Money Left In = Total Project Cost - Mortgage
   const moneyLeftIn = gdc - mortgageAmount;
-  
-  // Value Uplift (Paper Profit)
   const profit = v.gdv - gdc;
   
-  // Cashflow (Year 1)
   const grossRentYear = v.rent * 12;
   const opexYear = grossRentYear * v.opex;
-  const debtServiceYear = mortgageAmount * v.mortRate; // Interest Only usually
+  const debtServiceYear = mortgageAmount * v.mortRate; 
   const netCashflow = grossRentYear - opexYear - debtServiceYear;
   
-  // Yields
-  const netYield = (grossRentYear - opexYear) / gdc;
+  const netYield = (gdc > 0) ? (grossRentYear - opexYear) / gdc : 0;
   const roi = (moneyLeftIn > 0) ? (netCashflow / moneyLeftIn) : 0; 
 
   return { 
@@ -359,11 +376,9 @@ function updateUI() {
   const v = res.v;
   const set = (id, value) => { const e = el(id); if (e) e.textContent = value; };
   
-  // Dashboard Metrics
   set("kpiGdc", fmtGBP(res.gdc));
   set("kpiMoneyLeftIn", fmtGBP(res.moneyLeftIn));
   
-  // Style "Money Left In" - Green if negative (Money Out!), Red if positive (Money Stuck)
   const elLeftIn = el("kpiMoneyLeftIn");
   if(res.moneyLeftIn <= 0) {
       elLeftIn.textContent = fmtGBP(Math.abs(res.moneyLeftIn)) + " (CASH OUT)";
@@ -376,16 +391,14 @@ function updateUI() {
   set("kpiRoi", (res.moneyLeftIn <= 0) ? "Inf%" : fmtPct(res.roi * 100));
   set("kpiYield", fmtPct(res.netYield * 100));
 
-  // Leverage Optimiser
   set("kpiStressStd", fmtPct(v.stressStd * 100));
   set("kpiStress5yr", fmtPct(v.stress5yr * 100));
   set("kpiLoan2yr", fmtGBP(res.maxLoanStd));
   set("kpiLoan5yr", fmtGBP(res.maxLoan5yr));
   
-  const diff = res.maxLoan5yr - res.maxLoanStd;
+  const diff = Math.max(0, res.maxLoan5yr - res.maxLoanStd);
   set("kpiExtraLev", fmtGBP(diff));
   
-  // Detailed Outputs
   set("outPurch", fmtGBP(v.purch));
   set("outAcqCosts", fmtGBP(v.acqFees));
   set("outRefurb", fmtGBP(v.refurb));
@@ -405,9 +418,7 @@ function renderCashflowTable(grossRent, opexPct, loan, rate) {
   const tbody = el("tblCash").querySelector("tbody");
   if(!tbody) return;
   tbody.innerHTML = "";
-  // Simple 5 year projection
   for(let y=1; y<=5; y++) {
-      // Add simple 3% rental growth
       const growth = Math.pow(1.03, y-1);
       const r = grossRent * growth;
       const exp = r * opexPct;
@@ -427,6 +438,10 @@ function renderCashflowTable(grossRent, opexPct, loan, rate) {
 function wireEvents() {
   const resetBtn = el("btnResetZero");
   if (resetBtn) resetBtn.addEventListener("click", handleResetClick);
+
+  const emailBtn = el("btnEmailQuote");
+  if (emailBtn) emailBtn.addEventListener("click", handleEmailQuote);
+  
   setResetButtonLabel();
   
   document.querySelectorAll('.tabbtn').forEach(btn => {
