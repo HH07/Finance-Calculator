@@ -58,6 +58,19 @@
   .highlight-red { color: #c0392b; font-weight: bold; }
   .note { font-size: 12px; color: #666; display: block; margin-top: 4px; font-style: italic; }
   .disclaimer { font-size: 11px; color: #888; text-align: center; margin-top: 15px; font-style: italic; background:#f9f9f9; padding:8px; border-radius:4px; }
+
+  /* --- PRINT STYLES (Make Ctrl+P look like a report) --- */
+  @media print {
+      body { background: white; padding: 0; }
+      .wrap { box-shadow: none; max-width: 100%; padding: 0; }
+      .btnbar, .tabs, .disclaimer, .note { display: none !important; }
+      .tabpage { display: block !important; } /* Show all content */
+      .card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 20px; }
+      h1 { font-size: 24px; text-align: left; }
+      /* Hide elements not needed for print */
+      #tab-inputs, #tab-cash { display: none !important; } /* Only print Dashboard & Detail */
+      .tabpage.active { display: block !important; }
+  }
 </style>
 </head>
 <body>
@@ -398,33 +411,57 @@ function handleResetClick() {
   resetToZeroImmediate();
 }
 
-/* ----------------- Email Handler ----------------- */
+/* ----------------- Email Handler (LAYOUT FIX) ----------------- */
 function handleEmailSummary() {
     const res = calculate();
     const v = res.v;
-    const recipient = "service@easfinance.co.uk";
     
-    const subject = `Deal Enquiry: ${fmtGBP(v.purch)} Purchase`;
-    const body = `Hi EAS Finance,
+    // Formatting helper
+    const line = "----------------------------------------";
+    
+    // Detailed structured body
+    const body = `EAS FINANCE | DEAL ANALYSIS SUMMARY
+${line}
 
-I have run the following numbers on your calculator and would like to discuss this deal:
+1. SCENARIO & ACQUISITION
+Purchase Price:     ${fmtGBP(v.purch)}
+Stamp Duty:         ${fmtGBP(val("inStamp"))}
+Legal/Agent Fees:   ${fmtGBP(val("inFeesAcq"))}
+Total Buying Costs: ${fmtGBP(v.acqFees)}
 
---- PURCHASE ---
-Purchase Price: ${fmtGBP(v.purch)}
-Works Cost: ${fmtGBP(v.refurb)}
-Target GDV: ${fmtGBP(v.gdv)}
+2. WORKS & VALUE ADD
+Refurb Cost:        ${fmtGBP(val("inRefurb"))}
+Contingency:        ${val("inCont")}%
+Works Duration:     ${v.works} months
+TARGET GDV:         ${fmtGBP(v.gdv)}
 
---- BRIDGING REQ ---
-Gross Loan: ${fmtGBP(v.bGross)}
-Term: ${v.bTerm} months
+3. BRIDGING FINANCE (The Entry)
+Gross Loan:         ${fmtGBP(v.bGross)}
+Interest Rate:      ${v.bRate}% pm
+Term:               ${v.bTerm} months
+Retained Interest:  ${fmtGBP(res.bridgeInterest)}
+Net Advance:        ${fmtGBP(res.bridgeNet)}
 
---- EXIT PREDICTION ---
-Projected Value Uplift: ${fmtGBP(res.profit)}
-Money Left In: ${fmtGBP(res.moneyLeftIn)}
+4. REFINANCE EXIT (The Strategy)
+Proj. Rent:         ${fmtGBP(v.rent)}/mo (${fmtGBP(v.rent*12)}/yr)
+OpEx / Voids:       ${val("inOpex")}%
+LTV Cap:            ${val("inRefiLtv")}%
+Stress Test Used:   ${v.stress5yr*100}% (5-Year Fixed)
 
-Please let me know if you can assist with funding this project.`;
+5. FINANCIAL OUTCOME (The Results)
+Total GDC:          ${fmtGBP(res.gdc)}
+Max Refi Loan:      ${fmtGBP(res.maxLoan5yr)}
+Paper Uplift:       ${fmtGBP(res.profit)}
+ROI (Cash on Cash): ${res.moneyLeftIn <= 0 ? "Infinite" : fmtPct(res.roi * 100)}
 
-    window.location.href = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+${line}
+>>> MONEY LEFT IN DEAL: ${fmtGBP(res.moneyLeftIn)} <<<
+${line}
+
+If you would like to explore this project with us, then email your output to service@easfinance.co.uk`;
+
+    // Opens email with BLANK recipient so user can choose to send to self or EAS
+    window.location.href = `mailto:?subject=${encodeURIComponent("Deal Analysis - " + fmtGBP(v.purch))}&body=${encodeURIComponent(body)}`;
 }
  
 /* ----------------- Finance Engine ----------------- */
@@ -437,6 +474,7 @@ function calculate(overrideV = null) {
         purch: Math.max(0, val("inPurchase")),
         acqFees: Math.max(0, val("inStamp") + val("inFeesAcq")),
         refurb: Math.max(0, val("inRefurb")) * (1 + val("inCont")/100),
+        works: val("inWorksTerm"), // Added for email export
         gdv: Math.max(0, val("inGdv")),
         
         bGross: Math.max(0, val("inBridgeGross")),
